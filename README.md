@@ -1,1 +1,1 @@
-# Anlg - life loggin app
+# Anlg - life logging app
