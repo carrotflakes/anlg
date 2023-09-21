@@ -6,6 +6,11 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-async-graphql = "6.0.6"
+async-graphql = { version = "6.0.6", features = ["chrono", "log"] }
 async-graphql-actix-web = "6.0.6"
-actix-web = { version = "4.1.0", default-features = false, features = ["http2", "macros"] }
+actix-web = { version = "4.4.0", default-features = false, features = ["http2", "macros"] }
+actix-cors = "0.6.4"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = { version = "1.0" }
+chrono = { version = "0.4", features = ["serde"] }
+reqwest = { version = "0.11", default-features = false, features = ["rustls-tls", "json"] }
