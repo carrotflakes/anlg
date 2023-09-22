@@ -1,4 +1,5 @@
 mod gcdatastore;
+mod gcp;
 mod schema;
 
 use actix_cors::Cors;
@@ -16,6 +17,7 @@ async fn index_graphiql() -> Result<HttpResponse> {
 async fn main() -> std::io::Result<()> {
     println!("GraphiQL IDE: http://localhost:8000/graphql");
 
+    // dbg!(gcp::get_access_token("./credentials.json").await);
     // dbg!(
     //     gcdatastore::Client::new()
     //         .run_query::<Value>(&json!({
@@ -30,7 +32,7 @@ async fn main() -> std::io::Result<()> {
     // );
 
     HttpServer::new(move || {
-        let gcds = gcdatastore::Client::new();
+        let gcds = gcdatastore::Client::new("./credentials.json");
 
         let schema = Schema::build(schema::Query, schema::Mutation, EmptySubscription)
             .data(gcds)

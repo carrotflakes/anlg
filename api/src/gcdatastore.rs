@@ -1,40 +1,32 @@
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 
+use crate::gcp::TokenGetter;
+
 pub struct Client {
     reqwest: reqwest::Client,
     project_id: String,
-    access_token: String,
+    token_getter: TokenGetter,
 }
 
 impl Client {
-    pub fn new() -> Self {
+    pub fn new(credentials_json_path: &str) -> Self {
         Client {
             reqwest: reqwest::Client::new(),
             project_id: "optical-loop-227914".to_owned(),
-            access_token: std::env::var("GCP_ACCESS_TOKEN").unwrap(),
+            token_getter: TokenGetter::from_credentials_json(credentials_json_path),
         }
     }
 
     pub async fn run_query<T: Serialize>(&self, query: &T) -> Vec<Value> {
-        // let client = awc::Client::new();
-        // let client = &self.awc_client;
-        // let res = client.post(format!(
-        //             "https://datastore.googleapis.com/v1/projects/{}:runQuery",
-        //             self.project_id
-        //         ))
-        //     .insert_header(("Authorization", format!("Bearer {}", self.access_token)))
-        //     .insert_header(("Content-Type", "application/json"))
-        //     .send_json(&query)
-        //     .await;
-        // res.unwrap().json().await.unwrap()
+        let access_token = self.token_getter.get().await;
         let client = &self.reqwest;
         let res = client
             .post(&format!(
-                "https://datastore.googleapis.com/v1/projects/{}:runQuery",
+                "https://datastore.googleapis.com/v1/projects/{}:runQuery?key=AIzaSyArs-ffex8SEmPhrJw2xzXkKidNstR2p9c",
                 self.project_id
             ))
-            .bearer_auth(&self.access_token)
+            .bearer_auth(&access_token)
             .json(&query)
             .send()
             .await
@@ -49,12 +41,13 @@ impl Client {
 
     pub async fn commit(&self, content: &str) {
         let client = &self.reqwest;
+        let access_token = self.token_getter.get().await;
         let res = client
             .post(&format!(
                 "https://datastore.googleapis.com/v1/projects/{}:commit",
                 self.project_id
             ))
-            .bearer_auth(&self.access_token)
+            .bearer_auth(&access_token)
             .json(&json!({
                 "mode": "NON_TRANSACTIONAL",
                 "mutations": [
