@@ -7,7 +7,7 @@ on:
 
 env:
   GCP_SERVICE: api
-  GCP_IMAGE: asia-northeast1-docker.pkg.dev/anlg-399912/api:latest
+  GCP_IMAGE: asia-northeast1-docker.pkg.dev/anlg-399912/cloud-run-source-deploy/api:latest
 
 jobs:
   deploy:
@@ -31,7 +31,7 @@ jobs:
         uses: 'google-github-actions/setup-gcloud@v0'
 
       - name: Init docker for gcloud
-        run: gcloud auth configure-docker --quiet
+        run: gcloud auth configure-docker --quiet asia-northeast1-docker.pkg.dev
 
       - name: Build docker image
         run: docker build -t ${{ env.GCP_IMAGE }} ./api
@@ -47,5 +47,4 @@ jobs:
           region: asia-northeast1
           env_vars: |
             ENV=production
-          secrets: |
-            GOOGLE_APPLICATION_CREDENTIALS=credentials:latest
+            GCP_PROJECT_ID=anlg-399912

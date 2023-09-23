@@ -61,7 +61,10 @@ async fn main() -> std::io::Result<()> {
                     .to(index_graphiql),
             )
     })
-    .bind(std::env::var("ADDRESS").unwrap_or("0.0.0.0:8080".to_owned()))?
+    .bind(std::env::var("ADDRESS").unwrap_or(format!(
+        "0.0.0.0:{}",
+        std::env::var("PORT").unwrap_or("8080".to_owned())
+    )))?
     .run()
     .await
 }
