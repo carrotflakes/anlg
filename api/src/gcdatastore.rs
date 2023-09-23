@@ -5,15 +5,17 @@ use crate::gcp::TokenGetter;
 
 pub struct Client {
     reqwest: reqwest::Client,
+    url: String,
     project_id: String,
     token_getter: TokenGetter,
 }
 
 impl Client {
-    pub fn new(credentials_json_path: &str) -> Self {
+    pub fn new(credentials_json_path: &str, url: String, project_id: String) -> Self {
         Client {
             reqwest: reqwest::Client::new(),
-            project_id: "optical-loop-227914".to_owned(),
+            url,
+            project_id,
             token_getter: TokenGetter::from_credentials_json(credentials_json_path),
         }
     }
@@ -23,15 +25,18 @@ impl Client {
         let client = &self.reqwest;
         let res = client
             .post(&format!(
-                "https://datastore.googleapis.com/v1/projects/{}:runQuery?key=AIzaSyArs-ffex8SEmPhrJw2xzXkKidNstR2p9c",
-                self.project_id
+                "{}/v1/projects/{}:runQuery?key=AIzaSyArs-ffex8SEmPhrJw2xzXkKidNstR2p9c",
+                self.url, self.project_id
             ))
             .bearer_auth(&access_token)
             .json(&query)
             .send()
             .await
             .unwrap();
-        let res = res.json::<QueryResult>().await.unwrap();
+        let text = res.text().await.unwrap();
+        let Ok(res) = serde_json::from_str::<QueryResult>(&text) else {
+            panic!("parse failed: {}", text)
+        };
         res.batch
             .entity_results
             .into_iter()
@@ -44,8 +49,8 @@ impl Client {
         let access_token = self.token_getter.get().await;
         let res = client
             .post(&format!(
-                "https://datastore.googleapis.com/v1/projects/{}:commit",
-                self.project_id
+                "{}/v1/projects/{}:commit",
+                self.url, self.project_id
             ))
             .bearer_auth(&access_token)
             .json(&json!({
@@ -93,7 +98,7 @@ struct QueryResult {
 struct Batch {
     #[serde(rename = "entityResultType")]
     entity_result_type: String,
-    #[serde(rename = "entityResults")]
+    #[serde(rename = "entityResults", default)]
     entity_results: Vec<EntityResult>,
 }
 

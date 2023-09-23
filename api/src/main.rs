@@ -32,7 +32,10 @@ async fn main() -> std::io::Result<()> {
     // );
 
     HttpServer::new(move || {
-        let gcds = gcdatastore::Client::new("./credentials.json");
+        let datastore_url = std::env::var("GCP_DATASTORE_URL")
+            .unwrap_or("https://datastore.googleapis.com".to_owned());
+        let project_id = std::env::var("GCP_PROJECT_ID").unwrap();
+        let gcds = gcdatastore::Client::new("./credentials.json", datastore_url, project_id);
 
         let schema = Schema::build(schema::Query, schema::Mutation, EmptySubscription)
             .data(gcds)
@@ -52,7 +55,7 @@ async fn main() -> std::io::Result<()> {
                     .to(index_graphiql),
             )
     })
-    .bind("0.0.0.0:8000")?
+    .bind(std::env::var("ADDRESS").unwrap())?
     .run()
     .await
 }
