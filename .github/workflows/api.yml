@@ -6,8 +6,8 @@ on:
       - main
 
 env:
-  GCP_SERVICE: sample
-  GCP_IMAGE: gcr.io/anlg-399912/sample:latest
+  GCP_SERVICE: api
+  GCP_IMAGE: asia-northeast1-docker.pkg.dev/anlg-399912/api:latest
 
 jobs:
   deploy:
