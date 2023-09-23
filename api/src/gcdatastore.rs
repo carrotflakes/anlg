@@ -1,8 +1,6 @@
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 
-use crate::gcp::TokenGetter;
-
 pub struct Client {
     reqwest: reqwest::Client,
     url: String,
@@ -11,12 +9,12 @@ pub struct Client {
 }
 
 impl Client {
-    pub fn new(credentials_json_path: &str, url: String, project_id: String) -> Self {
+    pub fn new(url: String, project_id: String, token_getter: TokenGetter) -> Self {
         Client {
             reqwest: reqwest::Client::new(),
             url,
             project_id,
-            token_getter: TokenGetter::from_credentials_json(credentials_json_path),
+            token_getter,
         }
     }
 
@@ -118,4 +116,18 @@ struct Key {
     #[serde(rename = "partitionId")]
     partition_id: Value,
     path: Vec<Value>,
+}
+
+pub enum TokenGetter {
+    Dummy,
+    Gcp(crate::gcp::TokenGetter),
+}
+
+impl TokenGetter {
+    pub async fn get(&self) -> String {
+        match self {
+            TokenGetter::Dummy => "dummy".to_owned(),
+            TokenGetter::Gcp(gcp) => gcp.get().await,
+        }
+    }
 }
