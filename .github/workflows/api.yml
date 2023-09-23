@@ -7,7 +7,7 @@ on:
 
 env:
   GCP_SERVICE: sample
-  GCP_IMAGE: gcr.io/anlg/sample:latest
+  GCP_IMAGE: gcr.io/anlg-399912/sample:latest
 
 jobs:
   deploy:
@@ -24,7 +24,7 @@ jobs:
       - name: 'gcloud Auth'
         uses: 'google-github-actions/auth@v0'
         with:
-          workload_identity_provider: 'oidc-provider'
+          workload_identity_provider: 'projects/18647936388/locations/global/workloadIdentityPools/github-pool/providers/oidc-provider'
           service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
 
       - name: 'Set up gcloud SDK'
@@ -34,7 +34,7 @@ jobs:
         run: gcloud auth configure-docker --quiet
 
       - name: Build docker image
-        run: docker build -t ${{ env.GCP_IMAGE }} .
+        run: docker build -t ${{ env.GCP_IMAGE }} ./api
 
       - name: Push docker image for container registory
         run: docker push ${{ env.GCP_IMAGE }}
