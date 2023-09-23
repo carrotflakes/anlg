@@ -1,0 +1,51 @@
+name: deploy
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  GCP_SERVICE: sample
+  GCP_IMAGE: gcr.io/anlg/sample:latest
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v3
+
+      - name: 'gcloud Auth'
+        uses: 'google-github-actions/auth@v0'
+        with:
+          workload_identity_provider: 'oidc-provider'
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: 'Set up gcloud SDK'
+        uses: 'google-github-actions/setup-gcloud@v0'
+
+      - name: Init docker for gcloud
+        run: gcloud auth configure-docker --quiet
+
+      - name: Build docker image
+        run: docker build -t ${{ env.GCP_IMAGE }} .
+
+      - name: Push docker image for container registory
+        run: docker push ${{ env.GCP_IMAGE }}
+
+      - name: Deploy CloudRun Service
+        uses: google-github-actions/deploy-cloudrun@v0
+        with:
+          service: ${{ env.GCP_SERVICE }}
+          image: ${{ env.GCP_IMAGE }}
+          region: asia-northeast1
+          env_vars: |
+            ENV=production
+          secrets: |
+            GOOGLE_APPLICATION_CREDENTIALS=credentials:latest
