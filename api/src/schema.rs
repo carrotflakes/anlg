@@ -21,7 +21,15 @@ impl Query {
                     "limit": 50,
                     "kind": [{
                         "name": "note"
-                    }]
+                    }],
+                    "order": [
+                        {
+                            "property": {
+                                "name": "createdAt"
+                            },
+                            "direction": "DESCENDING"
+                        }
+                    ]
                 }
             }))
             .await;
@@ -57,7 +65,6 @@ impl Mutation {
                 "stringValue": content
             },
             "createdAt": {
-                "excludeFromIndexes": true,
                 "timestampValue": chrono::Utc::now()
             }
         });
