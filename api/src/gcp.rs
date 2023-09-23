@@ -128,3 +128,13 @@ pub struct Result {
     pub expires_in: i64,
     pub token_type: String,
 }
+
+pub async fn get_meta_data() -> Result {
+    let res = reqwest::Client::new()
+        .get("http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token")
+        .header("Metadata-Flavor", "Google")
+        .send().await
+        .unwrap();
+    let res = res.text().await.unwrap();
+    serde_json::from_str::<Result>(&res).unwrap()
+}

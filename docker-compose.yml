@@ -7,7 +7,7 @@ services:
     ports:
       - "8000:8000"
     environment:
-      #- GCP_CREDENTIALS=.credentials.json
+      - ENV=dev
       - GCP_DATASTORE_URL=http://datastore:8080
       - GCP_PROJECT_ID=anlg
       - ADDRESS=0.0.0.0:8000

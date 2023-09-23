@@ -35,10 +35,11 @@ async fn main() -> std::io::Result<()> {
         let datastore_url = std::env::var("GCP_DATASTORE_URL")
             .unwrap_or("https://datastore.googleapis.com".to_owned());
         let project_id = std::env::var("GCP_PROJECT_ID").unwrap();
-        let token_getter = if let Ok(cred) = std::env::var("GCP_CREDENTIALS") {
-            gcdatastore::TokenGetter::Gcp(gcp::TokenGetter::from_credentials_json(&cred))
-        } else {
+        let token_getter = if std::env::var("ENV").unwrap_or("dev".to_string()) == "dev" {
             gcdatastore::TokenGetter::Dummy
+        } else {
+            gcdatastore::TokenGetter::ACD
+            // gcdatastore::TokenGetter::ServiceAccount(gcp::TokenGetter::from_credentials_json(&cred))
         };
         let gcds = gcdatastore::Client::new(datastore_url, project_id, token_getter);
 

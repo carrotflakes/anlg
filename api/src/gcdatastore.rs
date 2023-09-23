@@ -120,14 +120,16 @@ struct Key {
 
 pub enum TokenGetter {
     Dummy,
-    Gcp(crate::gcp::TokenGetter),
+    ServiceAccount(crate::gcp::TokenGetter),
+    ACD,
 }
 
 impl TokenGetter {
     pub async fn get(&self) -> String {
         match self {
             TokenGetter::Dummy => "dummy".to_owned(),
-            TokenGetter::Gcp(gcp) => gcp.get().await,
+            TokenGetter::ServiceAccount(gcp) => gcp.get().await,
+            TokenGetter::ACD => crate::gcp::get_meta_data().await.access_token,
         }
     }
 }
