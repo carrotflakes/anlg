@@ -7,7 +7,7 @@ function App() {
   return (
     <Provider value={client}>
       <div className={styles.App}>
-        anlg
+        <h2>anlg</h2>
         <Test />
       </div>
     </Provider>

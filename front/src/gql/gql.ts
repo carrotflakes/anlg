@@ -14,8 +14,9 @@ import { TypedDocumentNode as DocumentNode } from '@graphql-typed-document-node/
  */
 const documents = {
     "\n  query a {\n    add(a: 1, b: 2)\n  }\n": types.ADocument,
-    "\n  query notes {\n    notes {\n      content\n      createdAt\n    }\n  }\n": types.NotesDocument,
+    "\n  query notes {\n    notes {\n      id\n      content\n      createdAt\n    }\n  }\n": types.NotesDocument,
     "\n  mutation post($content: String!) {\n    post(content: $content)\n  }\n": types.PostDocument,
+    "\n  mutation delete($id: String!) {\n    delete(noteId: $id)\n  }\n": types.DeleteDocument,
 };
 
 /**
@@ -39,11 +40,15 @@ export function graphql(source: "\n  query a {\n    add(a: 1, b: 2)\n  }\n"): (t
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
-export function graphql(source: "\n  query notes {\n    notes {\n      content\n      createdAt\n    }\n  }\n"): (typeof documents)["\n  query notes {\n    notes {\n      content\n      createdAt\n    }\n  }\n"];
+export function graphql(source: "\n  query notes {\n    notes {\n      id\n      content\n      createdAt\n    }\n  }\n"): (typeof documents)["\n  query notes {\n    notes {\n      id\n      content\n      createdAt\n    }\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function graphql(source: "\n  mutation post($content: String!) {\n    post(content: $content)\n  }\n"): (typeof documents)["\n  mutation post($content: String!) {\n    post(content: $content)\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation delete($id: String!) {\n    delete(noteId: $id)\n  }\n"): (typeof documents)["\n  mutation delete($id: String!) {\n    delete(noteId: $id)\n  }\n"];
 
 export function graphql(source: string) {
   return (documents as any)[source] ?? {};

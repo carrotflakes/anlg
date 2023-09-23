@@ -27,7 +27,8 @@ impl Query {
             .await;
         notes
             .into_iter()
-            .map(|v| Note {
+            .map(|(path, v)| Note {
+                id: path.id,
                 content: v["content"].as_object().unwrap()["stringValue"]
                     .as_str()
                     .unwrap()
@@ -50,13 +51,40 @@ pub struct Mutation;
 impl Mutation {
     async fn post(&self, ctx: &Context<'_>, content: String) -> Result<bool> {
         let client = ctx.data::<Client>().unwrap();
-        client.commit(&content).await;
+        let properties = json!({
+            "content": {
+                "excludeFromIndexes": true,
+                "stringValue": content
+            },
+            "createdAt": {
+                "excludeFromIndexes": true,
+                "timestampValue": chrono::Utc::now()
+            }
+        });
+        client
+            .commit(crate::gcdatastore::Commit::Insert {
+                kind: "note".to_string(),
+                properties,
+            })
+            .await;
+        Ok(true)
+    }
+
+    async fn delete(&self, ctx: &Context<'_>, note_id: String) -> Result<bool> {
+        let client = ctx.data::<Client>().unwrap();
+        client
+            .commit(crate::gcdatastore::Commit::Delete {
+                kind: "note".to_string(),
+                id: note_id,
+            })
+            .await;
         Ok(true)
     }
 }
 
 #[derive(Clone, SimpleObject)]
 pub struct Note {
+    pub id: String,
     pub content: String,
     pub created_at: DateTime<chrono::Utc>,
 }

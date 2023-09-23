@@ -18,12 +18,12 @@ impl Client {
         }
     }
 
-    pub async fn run_query<T: Serialize>(&self, query: &T) -> Vec<Value> {
+    pub async fn run_query<T: Serialize>(&self, query: &T) -> Vec<(Path, Value)> {
         let access_token = self.token_getter.get().await;
         let client = &self.reqwest;
         let res = client
             .post(&format!(
-                "{}/v1/projects/{}:runQuery?key=AIzaSyArs-ffex8SEmPhrJw2xzXkKidNstR2p9c",
+                "{}/v1/projects/{}:runQuery",
                 self.url, self.project_id
             ))
             .bearer_auth(&access_token)
@@ -38,11 +38,45 @@ impl Client {
         res.batch
             .entity_results
             .into_iter()
-            .map(|er| er.entity.properties)
+            .map(|er| (er.entity.key.path[0].clone(), er.entity.properties))
             .collect()
     }
 
-    pub async fn commit(&self, content: &str) {
+    pub async fn commit(&self, commit: Commit) {
+        let mutation = match commit {
+            Commit::Insert { kind, properties } => {
+                json!({
+                    "insert": {
+                        "key": {
+                            "partitionId": {
+                                "namespaceId": ""
+                            },
+                            "path": [
+                                {
+                                    "kind": kind
+                                }
+                            ]
+                        },
+                        "properties": properties
+                    }
+                })
+            }
+            Commit::Delete { kind, id } => {
+                json!({
+                    "delete": {
+                        "partitionId": {
+                            "namespaceId": ""
+                        },
+                        "path": [
+                            {
+                                "kind": kind,
+                                "id": id
+                            }
+                        ]
+                    }
+                })
+            }
+        };
         let client = &self.reqwest;
         let access_token = self.token_getter.get().await;
         let res = client
@@ -54,30 +88,7 @@ impl Client {
             .json(&json!({
                 "mode": "NON_TRANSACTIONAL",
                 "mutations": [
-                    {
-                        "insert": {
-                            "key": {
-                                "partitionId": {
-                                    "namespaceId": ""
-                                },
-                                "path": [
-                                    {
-                                        "kind": "note"
-                                    }
-                                ]
-                            },
-                            "properties": {
-                                "content": {
-                                    "excludeFromIndexes": true,
-                                    "stringValue": content
-                                },
-                                "createdAt": {
-                                    "excludeFromIndexes": true,
-                                    "timestampValue": chrono::Utc::now()
-                                }
-                            }
-                        }
-                    }
+                    mutation
                 ]
             }))
             .send()
@@ -85,6 +96,11 @@ impl Client {
             .unwrap();
         dbg!(res.json::<Value>().await.unwrap());
     }
+}
+
+pub enum Commit {
+    Insert { kind: String, properties: Value },
+    Delete { kind: String, id: String },
 }
 
 #[derive(Deserialize)]
@@ -115,7 +131,13 @@ struct Entity {
 struct Key {
     #[serde(rename = "partitionId")]
     partition_id: Value,
-    path: Vec<Value>,
+    path: Vec<Path>,
+}
+
+#[derive(Clone, Deserialize)]
+pub struct Path {
+    pub kind: String,
+    pub id: String,
 }
 
 pub enum TokenGetter {
