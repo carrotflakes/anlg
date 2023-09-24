@@ -4,7 +4,7 @@ import "./index.css";
 import App from "./components/App";
 
 // Store access token in local storage
-const token = location.search.match(/\?token=([^&]+)/)?.[1];
+const token = location.search.match(/[?&]token=([^&]+)/)?.[1];
 if (token) localStorage.setItem("anlg-token", token);
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
