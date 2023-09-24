@@ -1,0 +1,11 @@
+.Dialog {
+  min-width: 10rem;
+  min-height: 2.5rem;
+  background: #fff;
+  border-radius: 8px;
+  border: none;
+
+  &:focus {
+    outline: none;
+  }
+}

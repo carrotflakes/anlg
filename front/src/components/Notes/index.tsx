@@ -1,28 +1,20 @@
+import { useState } from "react";
 import { useMutation, useQuery } from "urql";
 import { graphql } from "../../gql";
-import React, { useEffect, useRef, useState } from "react";
 
+import { Dialog } from "../Dialog";
 import styles from "./index.module.scss";
 
-export function Test() {
+export function Notes() {
   const [res] = useQuery({ query: aQuery });
-  const [notesRes, refresh] = useQuery({ query: notesQuery });
-  const [, post] = useMutation(postMutation);
-  const [text, setText] = useState("");
+  const [notesRes] = useQuery({ query: notesQuery });
   const [selected, setSelected] = useState<string | null>(null);
-  const [showPostForm, setShowPostForm] = useState(false);
 
   // const [, deleteMut] = useMutation(deleteMutation);
   // const deleteNote = async (id: string) => {
   //   await deleteMut({ id });
   //   refresh({ requestPolicy: "network-only" });
   // };
-
-  const submit = async () => {
-    await post({ content: text });
-    refresh({ requestPolicy: "network-only" });
-    setText("");
-  };
 
   const selectedNote = notesRes.data?.notes.find((n) => n.id === selected);
 
@@ -40,20 +32,15 @@ export function Test() {
             }}
           >
             <pre>{note.content}</pre>
-            {relativeTimeFormat(new Date(note.updatedAt))}
+            <div className={styles.time}>
+              {relativeTimeFormat(new Date(note.updatedAt))}
+            </div>
           </div>
         )
       )}
-      <button onClick={() => setShowPostForm(true)}>+</button>
       {selected && (
         <Dialog onClose={() => setSelected(null)}>
           {selectedNote && <Note note={selectedNote} />}
-        </Dialog>
-      )}
-      {showPostForm && (
-        <Dialog onClose={() => setShowPostForm(false)}>
-          <textarea value={text} onChange={(e) => setText(e.target.value)} />
-          <button onClick={submit}>Post</button>
         </Dialog>
       )}
     </div>
@@ -78,14 +65,6 @@ const notesQuery = graphql(`
   }
 `);
 
-const postMutation = graphql(`
-  mutation post($content: String!) {
-    post(content: $content) {
-      id
-    }
-  }
-`);
-
 const deleteMutation = graphql(`
   mutation delete($id: String!) {
     deleteNote(noteId: $id) {
@@ -93,33 +72,6 @@ const deleteMutation = graphql(`
     }
   }
 `);
-
-function Dialog({
-  children,
-  onClose,
-}: {
-  children?: React.ReactNode;
-  onClose?: () => void;
-}) {
-  const ref = useRef<HTMLDialogElement>(null!);
-  useEffect(() => {
-    ref.current.showModal();
-  }, []);
-  const onClick = (e: React.MouseEvent<HTMLDialogElement, MouseEvent>) => {
-    const rect = ref.current.getBoundingClientRect();
-    const clickedInDialog =
-      rect.top <= e.clientY &&
-      e.clientY <= rect.top + rect.height &&
-      rect.left <= e.clientX &&
-      e.clientX <= rect.left + rect.width;
-    if (!clickedInDialog) onClose?.();
-  };
-  return (
-    <dialog className={styles.Dialog} onClick={onClick} ref={ref}>
-      {children}
-    </dialog>
-  );
-}
 
 function Note({
   note,

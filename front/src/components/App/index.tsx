@@ -1,14 +1,18 @@
 import { Provider } from 'urql'
 import { client } from '../../urql'
-import { Test } from '../Test'
+import { Notes } from '../Notes'
 import styles from './index.module.scss'
+import { PostButton } from '../PostButton'
 
 function App() {
   return (
     <Provider value={client}>
       <div className={styles.App}>
-        <h2>anlg</h2>
-        <Test />
+        <header>
+          <h1>anlg</h1>
+          <PostButton />
+        </header>
+        <Notes />
       </div>
     </Provider>
   )

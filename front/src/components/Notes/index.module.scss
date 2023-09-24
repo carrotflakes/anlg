@@ -1,0 +1,21 @@
+.card {
+  margin: 8px;
+  display: inline-block;
+  min-width: 10rem;
+  min-height: 2.5rem;
+  background: #fff;
+  border-radius: 8px;
+  padding: 12px;
+
+  cursor: pointer;
+
+  pre {
+    margin: 0;
+    font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  }
+
+  .time {
+    font-size: 0.8rem;
+    opacity: 0.8;
+  }
+}
