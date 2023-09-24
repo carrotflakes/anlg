@@ -30,7 +30,7 @@ export function Test() {
     <div>
       {res.data?.add === 3 || "The server is unavailable."}
       {notesRes.data?.notes.map(
-        (note: { id: string; content: string; createdAt: string }) => (
+        (note: { id: string; content: string; createdAt: string; updatedAt: string }) => (
           <div
             className={styles.card}
             key={note.id}
@@ -40,8 +40,7 @@ export function Test() {
             }}
           >
             <pre>{note.content}</pre>
-            {/* - {new Date(note.createdAt).toISOString()}{" "}
-            - <button onClick={() => deleteNote(note.id)}>x</button> */}
+            {relativeTimeFormat(new Date(note.updatedAt))}
           </div>
         )
       )}
@@ -149,4 +148,23 @@ function Note({
 
 function formatDate(date: Date) {
   return date.toISOString().replace(/T/, " ").replace(/\..+/, "");
+}
+
+function relativeTimeFormat(data: Date) {
+  const diff = Date.now() - data.getTime();
+  const seconds = Math.floor(diff / 1000);
+  const minutes = Math.floor(seconds / 60);
+  const hours = Math.floor(minutes / 60);
+  const days = Math.floor(hours / 24);
+  const weeks = Math.floor(days / 7);
+  const months = Math.floor(days / 30);
+  const years = Math.floor(days / 365); // not accurate (>_<;)
+
+  if (seconds < 60) return "just now";
+  if (minutes < 60) return `${minutes} minutes ago`;
+  if (hours < 24) return `${hours} hours ago`;
+  if (days < 7) return `${days} days ago`;
+  if (weeks < 4) return `${weeks} weeks ago`;
+  if (months < 12) return `${months} months ago`;
+  return `${years} years ago`;
 }
