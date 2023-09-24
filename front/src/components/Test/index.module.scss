@@ -1,0 +1,23 @@
+.card {
+  margin: 8px;
+  display: inline-block;
+  min-width: 10rem;
+  min-height: 2.5rem;
+  background: #fff;
+  border-radius: 8px;
+  padding: 8px;
+
+  cursor: pointer;
+}
+
+.Dialog {
+  min-width: 10rem;
+  min-height: 2.5rem;
+  background: #fff;
+  border-radius: 8px;
+  border: none;
+
+  &:focus {
+    outline: none;
+  }
+}

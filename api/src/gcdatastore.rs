@@ -42,7 +42,7 @@ impl Client {
             .collect()
     }
 
-    pub async fn commit(&self, commit: Commit) {
+    pub async fn commit(&self, commit: Commit) -> MutationResult {
         let mutation = match commit {
             Commit::Insert { kind, properties } => {
                 json!({
@@ -54,6 +54,28 @@ impl Client {
                             "path": [
                                 {
                                     "kind": kind
+                                }
+                            ]
+                        },
+                        "properties": properties
+                    }
+                })
+            }
+            Commit::Update {
+                kind,
+                id,
+                properties,
+            } => {
+                json!({
+                    "update": {
+                        "key": {
+                            "partitionId": {
+                                "namespaceId": ""
+                            },
+                            "path": [
+                                {
+                                    "kind": kind,
+                                    "id": id
                                 }
                             ]
                         },
@@ -94,13 +116,29 @@ impl Client {
             .send()
             .await
             .unwrap();
-        dbg!(res.json::<Value>().await.unwrap());
+        // dbg!(res.json::<Value>().await.unwrap());
+        let text = res.text().await.unwrap();
+        let Ok(res) = serde_json::from_str::<MutationResult>(&text) else {
+            panic!("parse failed: {}", text)
+        };
+        res
     }
 }
 
 pub enum Commit {
-    Insert { kind: String, properties: Value },
-    Delete { kind: String, id: String },
+    Insert {
+        kind: String,
+        properties: Value,
+    },
+    Update {
+        kind: String,
+        id: String,
+        properties: Value,
+    },
+    Delete {
+        kind: String,
+        id: String,
+    },
 }
 
 #[derive(Deserialize)]
@@ -122,22 +160,36 @@ struct EntityResult {
 }
 
 #[derive(Deserialize)]
-struct Entity {
+pub struct Entity {
     key: Key,
     properties: Value,
 }
 
 #[derive(Deserialize)]
-struct Key {
+pub struct Key {
     #[serde(rename = "partitionId")]
-    partition_id: Value,
-    path: Vec<Path>,
+    pub partition_id: Value,
+    pub path: Vec<Path>,
 }
 
 #[derive(Clone, Deserialize)]
 pub struct Path {
     pub kind: String,
     pub id: String,
+}
+
+#[derive(Deserialize)]
+pub struct MutationResult {
+    #[serde(rename = "indexUpdates")]
+    pub index_updates: i32,
+    #[serde(rename = "mutationResults")]
+    pub mutation_results: Vec<MutationResultItem>,
+}
+
+#[derive(Deserialize)]
+pub struct MutationResultItem {
+    pub key: Key,
+    pub version: String,
 }
 
 pub enum TokenGetter {

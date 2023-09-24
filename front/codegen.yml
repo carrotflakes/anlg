@@ -4,3 +4,7 @@ documents: "src/**/*.tsx"
 generates:
   'src/gql/':
     preset: client
+    config:
+      strictScalars: true
+      scalars:
+        DateTime: string
