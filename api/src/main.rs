@@ -51,17 +51,16 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .service(
                 web::resource("/graphql")
-                    .wrap(new_auth())
-                    .wrap(new_cors())
                     .guard(guard::Post())
+                    .wrap(new_auth())
                     .to(GraphQL::new(schema)),
             )
             .service(
-                web::resource("/graphql")
-                    .wrap(new_cors())
+                web::resource("/graphiql")
                     .guard(guard::Get())
                     .to(index_graphiql),
             )
+            .wrap(new_cors())
     })
     .bind(std::env::var("ADDRESS").unwrap_or(format!(
         "0.0.0.0:{}",
