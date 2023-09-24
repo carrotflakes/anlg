@@ -48,7 +48,29 @@ async fn main() -> std::io::Result<()> {
             .extension(async_graphql::extensions::Logger)
             .finish();
 
+        let token = std::env::var("ACCESS_TOKEN").ok();
+        let auth = actix_web_httpauth::middleware::HttpAuthentication::bearer(move |req, auth| {
+            let token = token.clone();
+            Box::pin(async move {
+                if token.map(|t| t == auth.token()) == Some(true) {
+                    Ok(req)
+                } else {
+                    let config = req
+                        .app_data::<actix_web_httpauth::extractors::bearer::Config>()
+                        .cloned()
+                        .unwrap_or_default()
+                        .scope("urn:example:channel=HBO&urn:example:rating=G,PG-13");
+
+                    Err((
+                        actix_web_httpauth::extractors::AuthenticationError::from(config).into(),
+                        req,
+                    ))
+                }
+            })
+        });
+
         App::new()
+            .wrap(auth)
             .wrap(new_cors())
             .service(
                 web::resource("/graphql")
