@@ -49,15 +49,16 @@ async fn main() -> std::io::Result<()> {
             .finish();
 
         App::new()
-            .wrap(new_auth())
-            .wrap(new_cors())
             .service(
                 web::resource("/graphql")
+                    .wrap(new_auth())
+                    .wrap(new_cors())
                     .guard(guard::Post())
                     .to(GraphQL::new(schema)),
             )
             .service(
                 web::resource("/graphql")
+                    .wrap(new_cors())
                     .guard(guard::Get())
                     .to(index_graphiql),
             )

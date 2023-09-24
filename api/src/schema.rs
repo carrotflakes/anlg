@@ -66,7 +66,10 @@ impl Mutation {
             })
             .await;
         Ok(Note {
-            id: res.mutation_results[0].key.path[0].id.clone(),
+            id: res.mutation_results[0].key.as_ref().unwrap().path[0]
+                .id
+                .clone()
+                .into(),
             content,
             created_at,
             updated_at: created_at,
@@ -77,7 +80,9 @@ impl Mutation {
     async fn update_note(&self, ctx: &Context<'_>, input: UpdateNoteInput) -> Result<Note> {
         let client = ctx.data::<Client>().unwrap();
         let updated_at = chrono::Utc::now();
-        let notes = client.run_query(&get_note_query(input.id.clone())).await;
+        let notes = client
+            .run_query(&get_note_query(input.id.to_string()))
+            .await;
         let Some(note) = notes.get(0).cloned() else {
             return Err("not found".into());
         };
@@ -97,12 +102,15 @@ impl Mutation {
         let res = client
             .commit(crate::gcdatastore::Commit::Update {
                 kind: "note".to_string(),
-                id: input.id,
+                id: input.id.to_string(),
                 properties,
             })
             .await;
         Ok(Note {
-            id: res.mutation_results[0].key.path[0].id.clone(),
+            id: res.mutation_results[0].key.as_ref().unwrap().path[0]
+                .id
+                .clone()
+                .into(),
             content: input.content,
             created_at: note.1["createdAt"]["timestampValue"]
                 .as_str()
@@ -136,15 +144,15 @@ impl Mutation {
                 "timestampValue": deleted_at
             }
         });
-        let res = client
+        let _ = client
             .commit(crate::gcdatastore::Commit::Update {
                 kind: "note".to_string(),
-                id: note_id,
+                id: note_id.clone(),
                 properties,
             })
             .await;
         Ok(Note {
-            id: res.mutation_results[0].key.path[0].id.clone(),
+            id: note_id.into(),
             content: note.1["content"]["stringValue"]
                 .as_str()
                 .unwrap()
@@ -166,7 +174,7 @@ impl Mutation {
 
 #[derive(Clone, SimpleObject)]
 pub struct Note {
-    pub id: String,
+    pub id: ID,
     pub content: String,
     pub created_at: DateTime<chrono::Utc>,
     pub updated_at: DateTime<chrono::Utc>,
@@ -192,7 +200,7 @@ impl Note {
             .as_str()
             .map(|s| DateTime::parse_from_rfc3339(s).unwrap().into());
         Self {
-            id,
+            id: id.into(),
             content,
             created_at,
             updated_at,
@@ -203,7 +211,7 @@ impl Note {
 
 #[derive(InputObject)]
 pub struct UpdateNoteInput {
-    pub id: String,
+    pub id: ID,
     pub content: String,
 }
 

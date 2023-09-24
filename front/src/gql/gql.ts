@@ -15,8 +15,8 @@ import { TypedDocumentNode as DocumentNode } from '@graphql-typed-document-node/
 const documents = {
     "\n  query a {\n    add(a: 1, b: 2)\n  }\n": types.ADocument,
     "\n  query notes {\n    notes {\n      id\n      content\n      createdAt\n      updatedAt\n      deletedAt\n    }\n  }\n": types.NotesDocument,
-    "\n  mutation post($content: String!) {\n    post(content: $content) {\n      id\n    }\n  }\n": types.PostDocument,
     "\n  mutation delete($id: String!) {\n    deleteNote(noteId: $id) {\n      id\n    }\n  }\n": types.DeleteDocument,
+    "\n  mutation post($content: String!) {\n    post(content: $content) {\n      id\n    }\n  }\n": types.PostDocument,
 };
 
 /**
@@ -44,11 +44,11 @@ export function graphql(source: "\n  query notes {\n    notes {\n      id\n     
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
-export function graphql(source: "\n  mutation post($content: String!) {\n    post(content: $content) {\n      id\n    }\n  }\n"): (typeof documents)["\n  mutation post($content: String!) {\n    post(content: $content) {\n      id\n    }\n  }\n"];
+export function graphql(source: "\n  mutation delete($id: String!) {\n    deleteNote(noteId: $id) {\n      id\n    }\n  }\n"): (typeof documents)["\n  mutation delete($id: String!) {\n    deleteNote(noteId: $id) {\n      id\n    }\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
-export function graphql(source: "\n  mutation delete($id: String!) {\n    deleteNote(noteId: $id) {\n      id\n    }\n  }\n"): (typeof documents)["\n  mutation delete($id: String!) {\n    deleteNote(noteId: $id) {\n      id\n    }\n  }\n"];
+export function graphql(source: "\n  mutation post($content: String!) {\n    post(content: $content) {\n      id\n    }\n  }\n"): (typeof documents)["\n  mutation post($content: String!) {\n    post(content: $content) {\n      id\n    }\n  }\n"];
 
 export function graphql(source: string) {
   return (documents as any)[source] ?? {};

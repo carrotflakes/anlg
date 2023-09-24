@@ -22,21 +22,28 @@ export function Notes() {
     <div>
       {res.data?.add === 3 || "The server is unavailable."}
       {notesRes.data?.notes.map(
-        (note: { id: string; content: string; createdAt: string; updatedAt: string }) => (
-          <div
-            className={styles.card}
-            key={note.id}
-            onClick={(e) => {
-              setSelected(note.id);
-              e.stopPropagation();
-            }}
-          >
-            <pre>{note.content}</pre>
-            <div className={styles.time}>
-              {relativeTimeFormat(new Date(note.updatedAt))}
+        (note: {
+          id: string;
+          content: string;
+          createdAt: string;
+          updatedAt: string;
+          deletedAt?: string | null;
+        }) =>
+          note.deletedAt ? null : (
+            <div
+              className={styles.card}
+              key={note.id}
+              onClick={(e) => {
+                setSelected(note.id);
+                e.stopPropagation();
+              }}
+            >
+              <pre>{note.content}</pre>
+              <div className={styles.time}>
+                {relativeTimeFormat(new Date(note.updatedAt))}
+              </div>
             </div>
-          </div>
-        )
+          )
       )}
       {selected && (
         <Dialog onClose={() => setSelected(null)}>

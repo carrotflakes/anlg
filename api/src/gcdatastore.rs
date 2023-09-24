@@ -188,7 +188,7 @@ pub struct MutationResult {
 
 #[derive(Deserialize)]
 pub struct MutationResultItem {
-    pub key: Key,
+    pub key: Option<Key>,
     pub version: String,
 }
 
