@@ -65,6 +65,11 @@ const notesQuery = graphql(`
     notes {
       id
       content
+      messages {
+        role
+        content
+        createdAt
+      }
       createdAt
       updatedAt
       deletedAt
@@ -73,7 +78,7 @@ const notesQuery = graphql(`
 `);
 
 const deleteMutation = graphql(`
-  mutation delete($id: String!) {
+  mutation delete($id: ID!) {
     deleteNote(noteId: $id) {
       id
     }
@@ -86,14 +91,31 @@ function Note({
   note: {
     id: string;
     content: string;
+    messages: {
+      role: string;
+      content: string;
+      createdAt: string;
+    }[];
     createdAt: string;
     updatedAt: string;
     deletedAt?: string | null;
   };
 }) {
   const [, deleteMut] = useMutation(deleteMutation);
+  const [, requestCompanionsCommentMut] = useMutation(
+    requestCompanionsCommentMutation
+  );
+  const [, addCommentMut] = useMutation(addCommentMutation);
   const deleteNote = async () => {
     await deleteMut({ id: note.id });
+  };
+  const requestCompanionsComment = async () => {
+    await requestCompanionsCommentMut({ noteId: note.id });
+  };
+  const [text, setText] = useState("");
+  const addComment = async () => {
+    await addCommentMut({ noteId: note.id, content: text });
+    setText("");
   };
 
   return (
@@ -101,9 +123,37 @@ function Note({
       <pre>{note.content}</pre>
       {formatDate(new Date(note.createdAt))}
       <button onClick={deleteNote}>Delete</button>
+      {note.messages.map((m) => (
+        <div key={m.createdAt}>
+          <div>{m.role}</div>
+          <pre>{m.content}</pre>
+          {formatDate(new Date(m.createdAt))}
+        </div>
+      ))}
+      <div>
+        <textarea value={text} onChange={(e) => setText(e.target.value)} />
+        <button onClick={addComment}>Post</button>
+        <button onClick={requestCompanionsComment}>Request</button>
+      </div>
     </div>
   );
 }
+
+const requestCompanionsCommentMutation = graphql(`
+  mutation requestCompanionsComment($noteId: ID!) {
+    requestCompanionsComment(noteId: $noteId) {
+      id
+    }
+  }
+`);
+
+const addCommentMutation = graphql(`
+  mutation addComment($noteId: ID!, $content: String!) {
+    addComment(noteId: $noteId, content: $content) {
+      id
+    }
+  }
+`);
 
 function formatDate(date: Date) {
   return date.toISOString().replace(/T/, " ").replace(/\..+/, "");

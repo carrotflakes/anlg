@@ -119,6 +119,7 @@ impl Client {
         // dbg!(res.json::<Value>().await.unwrap());
         let text = res.text().await.unwrap();
         let Ok(res) = serde_json::from_str::<MutationResult>(&text) else {
+            println!("Request: {:?}", serde_json::to_string(&mutation).unwrap());
             panic!("parse failed: {}", text)
         };
         res
@@ -181,7 +182,7 @@ pub struct Path {
 #[derive(Deserialize)]
 pub struct MutationResult {
     #[serde(rename = "indexUpdates")]
-    pub index_updates: i32,
+    pub index_updates: Option<i32>,
     #[serde(rename = "mutationResults")]
     pub mutation_results: Vec<MutationResultItem>,
 }
