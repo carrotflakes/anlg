@@ -335,7 +335,6 @@ dependencies = [
  "chrono",
  "gptcl",
  "gptcl-hyper",
- "openssl-probe",
  "reqwest",
  "rustls",
  "rustls-pemfile",

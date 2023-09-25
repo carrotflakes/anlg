@@ -16,8 +16,6 @@ async fn index_graphiql() -> Result<HttpResponse> {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    openssl_probe::init_ssl_cert_env_vars();
-
     let env = std::env::var("ENV").unwrap_or("dev".to_string());
     println!("ENV: {}", env);
     println!("GraphiQL IDE: http://localhost:8000/graphql");
