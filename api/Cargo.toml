@@ -18,3 +18,5 @@ reqwest = { version = "0.11", default-features = false, features = ["rustls-tls"
 base64 = "0.21"
 rustls = "0.21"
 rustls-pemfile = "1.0"
+gptcl = { git = "https://github.com/carrotflakes/gptcl.git" }
+gptcl-hyper = { git = "https://github.com/carrotflakes/gptcl.git" }

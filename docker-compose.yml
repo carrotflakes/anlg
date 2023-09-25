@@ -12,6 +12,7 @@ services:
       - GCP_PROJECT_ID=anlg
       - ADDRESS=0.0.0.0:8000
       - ACCESS_TOKEN=ACCESS_TOKEN
+      - OPENAI_API_KEY
     volumes:
       - ./api/src:/app/src
     depends_on:

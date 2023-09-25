@@ -170,6 +170,12 @@ impl Mutation {
             deleted_at: Some(deleted_at),
         })
     }
+
+    async fn simple_gpt_request(&self, ctx: &Context<'_>, prompt: String) -> Result<String> {
+        let gpt = ctx.data::<crate::gpt::Gpt>().unwrap();
+        let res = gpt.simple_request(&prompt).await;
+        Ok(res)
+    }
 }
 
 #[derive(Clone, SimpleObject)]

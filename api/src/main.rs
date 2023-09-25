@@ -1,5 +1,6 @@
 mod gcdatastore;
 mod gcp;
+mod gpt;
 mod schema;
 
 use actix_cors::Cors;
@@ -41,10 +42,14 @@ async fn main() -> std::io::Result<()> {
             gcdatastore::TokenGetter::ACD
             // gcdatastore::TokenGetter::ServiceAccount(gcp::TokenGetter::from_credentials_json(&cred))
         };
-        let gcds = gcdatastore::Client::new(datastore_url, project_id, token_getter);
+        let datastore = gcdatastore::Client::new(datastore_url, project_id, token_getter);
+
+        let openai_api_key = std::env::var("OPENAI_API_KEY").unwrap();
+        let gpt = gpt::Gpt::new(openai_api_key);
 
         let schema = Schema::build(schema::Query, schema::Mutation, EmptySubscription)
-            .data(gcds)
+            .data(datastore)
+            .data(gpt)
             .extension(async_graphql::extensions::Logger)
             .finish();
 
