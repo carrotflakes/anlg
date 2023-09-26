@@ -177,32 +177,54 @@ pub async fn add_companions_comment_to_note(
     gpt: &Gpt,
     mut note: Note,
 ) -> Result<Note> {
-    let prompt = if note.messages.is_empty() {
-        format!(
-            r"You're a companion. The user posts a note here:
-# User note
-{:?}
+    //     let prompt = if note.messages.is_empty() {
+    //         format!(
+    //             r"You're a companion. The user posts a note here:
+    // # User note
+    // {:?}
 
-Please write a comment for the user in about 10 words. No quotes needed. Don't expect the user to respond.",
-            note.content
-        )
-    } else {
-        format!(
-            r"You're a companion. The user posts a note and comments under the note is here:
+    // Please write a comment for the user in about 10 words. No quotes needed. Don't expect the user to respond.",
+    //             note.content
+    //         )
+    //     } else {
+    //         format!(
+    //             r"You're a companion. The user posts a note and comments under the note is here:
 
-# User note
-{:?}
+    // # User note
+    // {:?}
 
-# Comments (in chronological order){}
+    // # Comments (in chronological order){}
 
-Please write a comment for the user in about 10 words. No quotes needed.",
-            note.content,
-            note.messages
-                .iter()
-                .map(|m| format!(r#"\n{{"role":"{:?}",text:{:?}}}"#, m.role, m.content))
-                .collect::<String>()
-        )
-    };
+    // Please write a comment for the user in about 10 words. No quotes needed.",
+    //             note.content,
+    //             note.messages
+    //                 .iter()
+    //                 .map(|m| format!(r#"\n{{"role":"{:?}",text:{:?}}}"#, m.role, m.content))
+    //                 .collect::<String>()
+    //         )
+    //     };
+
+    let note_info = json!({
+        "note": note.content,
+        "messages": note.messages.iter().map(|m|
+            json!({
+                "role": match m.role {
+                    Role::Companion => "you",
+                    Role::User => "user",
+                },
+                "text": m.content,
+            })
+        ).chain([json!({
+            "role": "you",
+            "text": "<TEXT>",
+        })]).collect::<Vec<_>>(),
+    });
+    let prompt = format!(
+        r#"The user has posted a note. You can leave a comment for the user. Please provide the text to be inserted in place of <TEXT> in the following JSON. Your answer must be in the format {{"text":"<TEXT>"}}.
+
+{}"#,
+        serde_json::to_string(&note_info).unwrap()
+    );
     log::info!("prompt: {:?}", prompt);
     let res = gpt
         .call(&[
@@ -212,7 +234,14 @@ Please write a comment for the user in about 10 words. No quotes needed.",
             ChatMessage::from_user(prompt),
         ])
         .await?;
-    let content = res.content.unwrap();
+    let content_json = res.content.unwrap();
+    let content = serde_json::from_str::<serde_json::Value>(&content_json)?
+        .get("text")
+        .ok_or("Unexpected response")?
+        .as_str()
+        .ok_or("Unexpected response")?
+        .to_owned();
+    log::info!("GPT response: {:?}", content);
     note.messages.push(Message {
         role: Role::Companion,
         content,
