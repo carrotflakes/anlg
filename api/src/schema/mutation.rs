@@ -235,12 +235,18 @@ pub async fn add_companions_comment_to_note(
         ])
         .await?;
     let content_json = res.content.unwrap();
-    let content = serde_json::from_str::<serde_json::Value>(&content_json)?
-        .get("text")
-        .ok_or("Unexpected response")?
-        .as_str()
-        .ok_or("Unexpected response")?
-        .to_owned();
+    let content = serde_json::from_str::<serde_json::Value>(&content_json)
+        .map_err(|e| Error::from(e))
+        .and_then(|v| {
+            v.get("text")
+                .ok_or(Error::new("Unexpected response"))
+                .and_then(|v| {
+                    v.as_str()
+                        .map(|s| s.to_owned())
+                        .ok_or(Error::new("Unexpected response"))
+                })
+        })
+        .map_err(|e| Error::from(format!("Invalid json: {:?}: {:?}", content_json, e)))?;
     log::info!("GPT response: {:?}", content);
     note.messages.push(Message {
         role: Role::Companion,
