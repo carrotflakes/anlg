@@ -336,6 +336,7 @@ dependencies = [
  "env_logger",
  "gptcl",
  "gptcl-hyper",
+ "log",
  "reqwest",
  "rustls",
  "rustls-pemfile",

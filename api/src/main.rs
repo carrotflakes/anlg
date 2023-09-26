@@ -19,8 +19,8 @@ async fn main() -> std::io::Result<()> {
     env_logger::init();
 
     let env = std::env::var("ENV").unwrap_or("dev".to_string());
-    println!("ENV: {}", env);
-    println!("GraphiQL IDE: http://localhost:8000/graphql");
+    log::info!("ENV: {}", env);
+    log::info!("GraphiQL IDE: http://localhost:8000/graphql");
 
     HttpServer::new(move || {
         let datastore_url = std::env::var("GCP_DATASTORE_URL")

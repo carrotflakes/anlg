@@ -97,7 +97,7 @@ impl Mutation {
         };
         let mut note = Note::from_json_value(note.1, note_id.to_string());
         let prompt = if note.messages.is_empty() {
-            format!("You're a companion. The user posts a note here: \n\n# User note\n{:?}\n\nPlease write a comment shortly for the user in about 10 words.", note.content)
+            format!("You're a companion. The user posts a note here: \n\n# User note\n{:?}\n\nPlease write a comment for the user in about 10 words.", note.content)
         } else {
             format!(
             "You're a companion. The user posts a note and comments under the note is here: \n\n# User note\n{:?}\n\n# Comments {}\n\nPlease write a comment for the user in about 10 words.",
@@ -108,7 +108,7 @@ impl Mutation {
                 .collect::<String>()
             )
         };
-        println!("prompt: {:?}", prompt);
+        log::info!("prompt: {:?}", prompt);
         let gpt = ctx.data::<crate::gpt::Gpt>().unwrap();
         let res = gpt.simple_request(&prompt).await;
         note.messages.push(Message {
