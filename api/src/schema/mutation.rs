@@ -1,4 +1,5 @@
 use async_graphql::*;
+use gptcl::model::ChatMessage;
 use serde_json::json;
 
 use crate::clients::{
@@ -136,8 +137,8 @@ impl Mutation {
 
     async fn simple_gpt_request(&self, ctx: &Context<'_>, prompt: String) -> Result<String> {
         let gpt = ctx.data::<Gpt>().unwrap();
-        let res = gpt.simple_request(&prompt).await;
-        Ok(res)
+        let res = gpt.call(&[ChatMessage::from_user(prompt)]).await?;
+        Ok(res.content.unwrap())
     }
 }
 
@@ -190,22 +191,44 @@ pub async fn add_companions_comment_to_note(
     };
     let mut note = Note::from_json_value(note.1, note_id.clone());
     let prompt = if note.messages.is_empty() {
-        format!("You're a companion. The user posts a note here: \n\n# User note\n{:?}\n\nPlease write a comment for the user in about 10 words.", note.content)
+        format!(
+            r"You're a companion. The user posts a note here:
+# User note
+{:?}
+
+Please write a comment for the user in about 10 words.",
+            note.content
+        )
     } else {
         format!(
-            "You're a companion. The user posts a note and comments under the note is here: \n\n# User note\n{:?}\n\n# Comments {}\n\nPlease write a comment for the user in about 10 words.",
+            r"You're a companion. The user posts a note and comments under the note is here:
+
+# User note
+{:?}
+
+# Comments (in chronological order){}
+
+Please write a comment for the user in about 10 words.",
             note.content,
             note.messages
                 .iter()
-                .map(|m| format!("\n{:?}: {:?}", m.role, m.content))
+                .map(|m| format!(r#"\n{{"role":"{:?}",text:{:?}}}"#, m.role, m.content))
                 .collect::<String>()
-            )
+        )
     };
     log::info!("prompt: {:?}", prompt);
-    let res = gpt.simple_request(&prompt).await;
+    let res = gpt
+        .call(&[
+            // ChatMessage::from_system(
+            //     "you must respond as if you were treating a friend.".to_owned(),
+            // ),
+            ChatMessage::from_user(prompt),
+        ])
+        .await?;
+    let content = res.content.unwrap();
     note.messages.push(Message {
         role: Role::Companion,
-        content: res,
+        content,
         created_at: chrono::Utc::now(),
     });
     Ok(note)

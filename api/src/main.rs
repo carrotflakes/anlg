@@ -34,7 +34,7 @@ async fn main() -> std::io::Result<()> {
         let datastore = gcdatastore::Client::new(datastore_url, project_id, token_getter);
 
         let openai_api_key = std::env::var("OPENAI_API_KEY").unwrap();
-        let gpt = gpt::Gpt::new(openai_api_key);
+        let gpt = gpt::new_gpt(openai_api_key);
 
         let schema = Schema::build(schema::Query, schema::Mutation, EmptySubscription)
             .data(datastore)
