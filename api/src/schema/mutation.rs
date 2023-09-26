@@ -1,7 +1,7 @@
 use async_graphql::*;
 use serde_json::json;
 
-use crate::gcdatastore::Client;
+use crate::gcdatastore::Client as DSClient;
 
 use super::{
     note::{Message, Role},
@@ -13,7 +13,7 @@ pub struct Mutation;
 #[Object]
 impl Mutation {
     async fn post(&self, ctx: &Context<'_>, content: String) -> Result<Note> {
-        let client = ctx.data::<Client>().unwrap();
+        let datastore = ctx.data::<DSClient>().unwrap();
         let created_at = chrono::Utc::now();
         let properties = json!({
             "content": {
@@ -27,7 +27,7 @@ impl Mutation {
                 "timestampValue": created_at
             }
         });
-        let res = client
+        let res = datastore
             .commit(crate::gcdatastore::Commit::Insert {
                 kind: "note".to_string(),
                 properties,
@@ -47,9 +47,9 @@ impl Mutation {
     }
 
     async fn update_note(&self, ctx: &Context<'_>, input: UpdateNoteInput) -> Result<Note> {
-        let client = ctx.data::<Client>().unwrap();
+        let datastore = ctx.data::<DSClient>().unwrap();
         let updated_at = chrono::Utc::now();
-        let notes = client
+        let notes = datastore
             .run_query(&get_note_query(input.id.to_string()))
             .await;
         let Some(note) = notes.get(0).cloned() else {
@@ -59,7 +59,7 @@ impl Mutation {
         note.content = input.content;
         note.updated_at = updated_at;
         let properties = note.to_json_value();
-        let _ = client
+        let _ = datastore
             .commit(crate::gcdatastore::Commit::Update {
                 kind: "note".to_string(),
                 id: input.id.to_string(),
@@ -70,16 +70,18 @@ impl Mutation {
     }
 
     async fn delete_note(&self, ctx: &Context<'_>, note_id: ID) -> Result<Note> {
-        let client = ctx.data::<Client>().unwrap();
+        let datastore = ctx.data::<DSClient>().unwrap();
         let deleted_at = chrono::Utc::now();
-        let notes = client.run_query(&get_note_query(note_id.to_string())).await;
+        let notes = datastore
+            .run_query(&get_note_query(note_id.to_string()))
+            .await;
         let Some(note) = notes.get(0).cloned() else {
             return Err("not found".into());
         };
         let mut note = Note::from_json_value(note.1, note_id.to_string());
         note.deleted_at = Some(deleted_at);
         let properties = note.to_json_value();
-        let _ = client
+        let _ = datastore
             .commit(crate::gcdatastore::Commit::Update {
                 kind: "note".to_string(),
                 id: note_id.to_string(),
@@ -90,8 +92,11 @@ impl Mutation {
     }
 
     async fn request_companions_comment(&self, ctx: &Context<'_>, note_id: ID) -> Result<Note> {
-        let client = ctx.data::<Client>().unwrap();
-        let notes = client.run_query(&get_note_query(note_id.to_string())).await;
+        let datastore = ctx.data::<DSClient>().unwrap();
+        let gpt = ctx.data::<crate::gpt::Gpt>().unwrap();
+        let notes = datastore
+            .run_query(&get_note_query(note_id.to_string()))
+            .await;
         let Some(note) = notes.get(0).cloned() else {
             return Err("not found".into());
         };
@@ -109,7 +114,6 @@ impl Mutation {
             )
         };
         log::info!("prompt: {:?}", prompt);
-        let gpt = ctx.data::<crate::gpt::Gpt>().unwrap();
         let res = gpt.simple_request(&prompt).await;
         note.messages.push(Message {
             role: Role::Companion,
@@ -117,7 +121,7 @@ impl Mutation {
             created_at: chrono::Utc::now(),
         });
         let properties = note.to_json_value();
-        let _ = client
+        let _ = datastore
             .commit(crate::gcdatastore::Commit::Update {
                 kind: "note".to_string(),
                 id: note_id.to_string(),
@@ -128,8 +132,10 @@ impl Mutation {
     }
 
     async fn add_comment(&self, ctx: &Context<'_>, note_id: ID, content: String) -> Result<Note> {
-        let client = ctx.data::<Client>().unwrap();
-        let notes = client.run_query(&get_note_query(note_id.to_string())).await;
+        let datastore = ctx.data::<DSClient>().unwrap();
+        let notes = datastore
+            .run_query(&get_note_query(note_id.to_string()))
+            .await;
         let Some(note) = notes.get(0).cloned() else {
             return Err("not found".into());
         };
@@ -140,7 +146,7 @@ impl Mutation {
             created_at: chrono::Utc::now(),
         });
         let properties = note.to_json_value();
-        let _ = client
+        let _ = datastore
             .commit(crate::gcdatastore::Commit::Update {
                 kind: "note".to_string(),
                 id: note_id.to_string(),
