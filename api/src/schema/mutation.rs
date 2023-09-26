@@ -196,7 +196,7 @@ pub async fn add_companions_comment_to_note(
 # User note
 {:?}
 
-Please write a comment for the user in about 10 words.",
+Please write a comment for the user in about 10 words. No quotes needed. Don't expect the user to respond.",
             note.content
         )
     } else {
