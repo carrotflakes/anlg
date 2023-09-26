@@ -1,7 +1,10 @@
 use async_graphql::*;
 use serde_json::json;
 
-use crate::gcdatastore::Client as DSClient;
+use crate::clients::{
+    gcdatastore::{Client as DSClient, Commit},
+    gpt::Gpt,
+};
 
 use super::{
     note::{Message, Role},
@@ -28,7 +31,7 @@ impl Mutation {
             }
         });
         let res = datastore
-            .commit(crate::gcdatastore::Commit::Insert {
+            .commit(Commit::Insert {
                 kind: "note".to_string(),
                 properties,
             })
@@ -60,7 +63,7 @@ impl Mutation {
         note.updated_at = updated_at;
         let properties = note.to_json_value();
         let _ = datastore
-            .commit(crate::gcdatastore::Commit::Update {
+            .commit(Commit::Update {
                 kind: "note".to_string(),
                 id: input.id.to_string(),
                 properties,
@@ -82,7 +85,7 @@ impl Mutation {
         note.deleted_at = Some(deleted_at);
         let properties = note.to_json_value();
         let _ = datastore
-            .commit(crate::gcdatastore::Commit::Update {
+            .commit(Commit::Update {
                 kind: "note".to_string(),
                 id: note_id.to_string(),
                 properties,
@@ -93,36 +96,11 @@ impl Mutation {
 
     async fn request_companions_comment(&self, ctx: &Context<'_>, note_id: ID) -> Result<Note> {
         let datastore = ctx.data::<DSClient>().unwrap();
-        let gpt = ctx.data::<crate::gpt::Gpt>().unwrap();
-        let notes = datastore
-            .run_query(&get_note_query(note_id.to_string()))
-            .await;
-        let Some(note) = notes.get(0).cloned() else {
-            return Err("not found".into());
-        };
-        let mut note = Note::from_json_value(note.1, note_id.to_string());
-        let prompt = if note.messages.is_empty() {
-            format!("You're a companion. The user posts a note here: \n\n# User note\n{:?}\n\nPlease write a comment for the user in about 10 words.", note.content)
-        } else {
-            format!(
-            "You're a companion. The user posts a note and comments under the note is here: \n\n# User note\n{:?}\n\n# Comments {}\n\nPlease write a comment for the user in about 10 words.",
-            note.content,
-            note.messages
-                .iter()
-                .map(|m| format!("\n{:?}: {:?}", m.role, m.content))
-                .collect::<String>()
-            )
-        };
-        log::info!("prompt: {:?}", prompt);
-        let res = gpt.simple_request(&prompt).await;
-        note.messages.push(Message {
-            role: Role::Companion,
-            content: res,
-            created_at: chrono::Utc::now(),
-        });
+        let gpt = ctx.data::<Gpt>().unwrap();
+        let note = add_companions_comment_to_note(datastore, gpt, note_id.to_string()).await?;
         let properties = note.to_json_value();
         let _ = datastore
-            .commit(crate::gcdatastore::Commit::Update {
+            .commit(Commit::Update {
                 kind: "note".to_string(),
                 id: note_id.to_string(),
                 properties,
@@ -147,7 +125,7 @@ impl Mutation {
         });
         let properties = note.to_json_value();
         let _ = datastore
-            .commit(crate::gcdatastore::Commit::Update {
+            .commit(Commit::Update {
                 kind: "note".to_string(),
                 id: note_id.to_string(),
                 properties,
@@ -157,7 +135,7 @@ impl Mutation {
     }
 
     async fn simple_gpt_request(&self, ctx: &Context<'_>, prompt: String) -> Result<String> {
-        let gpt = ctx.data::<crate::gpt::Gpt>().unwrap();
+        let gpt = ctx.data::<Gpt>().unwrap();
         let res = gpt.simple_request(&prompt).await;
         Ok(res)
     }
@@ -199,4 +177,36 @@ pub fn get_note_query(note_id: String) -> serde_json::Value {
             }
         }
     })
+}
+
+pub async fn add_companions_comment_to_note(
+    datastore: &DSClient,
+    gpt: &Gpt,
+    note_id: String,
+) -> Result<Note> {
+    let notes = datastore.run_query(&get_note_query(note_id.clone())).await;
+    let Some(note) = notes.get(0).cloned() else {
+        return Err("not found".into());
+    };
+    let mut note = Note::from_json_value(note.1, note_id.clone());
+    let prompt = if note.messages.is_empty() {
+        format!("You're a companion. The user posts a note here: \n\n# User note\n{:?}\n\nPlease write a comment for the user in about 10 words.", note.content)
+    } else {
+        format!(
+            "You're a companion. The user posts a note and comments under the note is here: \n\n# User note\n{:?}\n\n# Comments {}\n\nPlease write a comment for the user in about 10 words.",
+            note.content,
+            note.messages
+                .iter()
+                .map(|m| format!("\n{:?}: {:?}", m.role, m.content))
+                .collect::<String>()
+            )
+    };
+    log::info!("prompt: {:?}", prompt);
+    let res = gpt.simple_request(&prompt).await;
+    note.messages.push(Message {
+        role: Role::Companion,
+        content: res,
+        created_at: chrono::Utc::now(),
+    });
+    Ok(note)
 }

@@ -1,7 +1,7 @@
 use async_graphql::*;
 use serde_json::json;
 
-use crate::gcdatastore::Client;
+use crate::clients::gcdatastore::Client as DSClient;
 
 use super::Note;
 
@@ -15,8 +15,8 @@ impl Query {
     }
 
     async fn notes(&self, ctx: &Context<'_>) -> Vec<Note> {
-        let client = ctx.data::<Client>().unwrap();
-        let notes = client
+        let datastore = ctx.data::<DSClient>().unwrap();
+        let notes = datastore
             .run_query(&json!({
                 "query": {
                     "limit": 50,

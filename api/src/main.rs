@@ -1,12 +1,11 @@
-mod gcdatastore;
-mod gcp;
-mod gpt;
-mod middlewares;
-mod schema;
-
 use actix_web::{guard, web, App, HttpResponse, HttpServer, Result};
 use async_graphql::{http::GraphiQLSource, EmptySubscription, Schema};
 use async_graphql_actix_web::GraphQL;
+
+use anlg_api::{
+    clients::{gcdatastore, gpt},
+    middlewares, schema,
+};
 
 async fn index_graphiql() -> Result<HttpResponse> {
     Ok(HttpResponse::Ok()

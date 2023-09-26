@@ -195,7 +195,7 @@ pub struct MutationResultItem {
 
 pub enum TokenGetter {
     Dummy,
-    ServiceAccount(crate::gcp::TokenGetter),
+    ServiceAccount(super::gcp::TokenGetter),
     ACD,
 }
 
@@ -204,7 +204,7 @@ impl TokenGetter {
         match self {
             TokenGetter::Dummy => "dummy".to_owned(),
             TokenGetter::ServiceAccount(gcp) => gcp.get().await,
-            TokenGetter::ACD => crate::gcp::get_meta_data().await.access_token,
+            TokenGetter::ACD => super::gcp::get_meta_data().await.access_token,
         }
     }
 }
