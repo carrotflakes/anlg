@@ -19,3 +19,40 @@
     opacity: 0.8;
   }
 }
+
+.Note {
+  pre {
+    margin: 0;
+    font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  }
+
+  .time {
+    font-size: 0.8rem;
+    opacity: 0.8;
+  }
+}
+
+.Message {
+  margin: 4px 0;
+
+  & > header {
+    .time {
+      padding-left: 8px;
+      font-size: 0.8rem;
+      opacity: 0.8;
+    }
+  }
+
+  pre {
+    margin: 0;
+    font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  }
+}
+
+.messageForm {
+  margin: 8px;
+  padding: 8px;
+  border-radius: 8px;
+  border: solid 1px #ccc;
+  outline: none;
+}

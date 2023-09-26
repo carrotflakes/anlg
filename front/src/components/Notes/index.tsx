@@ -6,7 +6,6 @@ import { Dialog } from "../Dialog";
 import styles from "./index.module.scss";
 
 export function Notes() {
-  const [res] = useQuery({ query: aQuery });
   const [notesRes] = useQuery({ query: notesQuery });
   const [selected, setSelected] = useState<string | null>(null);
 
@@ -20,7 +19,7 @@ export function Notes() {
 
   return (
     <div>
-      {res.data?.add === 3 || "The server is unavailable."}
+      {notesRes.error && "The server is unavailable."}
       {notesRes.data?.notes.map(
         (note: {
           id: string;
@@ -53,12 +52,6 @@ export function Notes() {
     </div>
   );
 }
-
-const aQuery = graphql(`
-  query a {
-    add(a: 1, b: 2)
-  }
-`);
 
 const notesQuery = graphql(`
   query notes {
@@ -119,19 +112,27 @@ function Note({
   };
 
   return (
-    <div>
+    <div className={styles.Note}>
       <pre>{note.content}</pre>
-      {formatDate(new Date(note.createdAt))}
+      <span className={styles.time}>
+        {formatDate(new Date(note.createdAt))}
+      </span>
       <button onClick={deleteNote}>Delete</button>
       {note.messages.map((m) => (
-        <div key={m.createdAt}>
-          <div>{m.role}</div>
+        <div className={styles.Message} key={m.createdAt}>
+          <header>
+            <span className={styles.name} style={{ color: m.role === "USER" ? "#666" : "#55f" }}>
+              {m.role === "USER" ? "you" : "bot"}
+            </span>
+            <span className={styles.time}>
+              {relativeTimeFormat(new Date(m.createdAt))}
+            </span>
+          </header>
           <pre>{m.content}</pre>
-          {formatDate(new Date(m.createdAt))}
         </div>
       ))}
       <div>
-        <textarea value={text} onChange={(e) => setText(e.target.value)} />
+        <textarea className={styles.messageForm} value={text} onChange={(e) => setText(e.target.value)} />
         <button onClick={addComment}>Post</button>
         <button onClick={requestCompanionsComment}>Request</button>
       </div>
