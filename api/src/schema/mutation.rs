@@ -18,6 +18,7 @@ pub struct Mutation;
 impl Mutation {
     async fn post(&self, ctx: &Context<'_>, content: String) -> Result<Note> {
         let datastore = ctx.data::<DSClient>().unwrap();
+        let gpt = ctx.data::<Gpt>().unwrap();
         let created_at = chrono::Utc::now();
         let properties = json!({
             "content": {
@@ -37,17 +38,19 @@ impl Mutation {
                 properties,
             })
             .await;
-        Ok(Note {
-            id: res.mutation_results[0].key.as_ref().unwrap().path[0]
-                .id
-                .clone()
-                .into(),
-            content,
-            messages: vec![],
-            created_at,
-            updated_at: created_at,
-            deleted_at: None,
-        })
+        let note_id = res.mutation_results[0].key.as_ref().unwrap().path[0]
+            .id
+            .clone();
+        let note = add_companions_comment_to_note(datastore, gpt, note_id.clone()).await?;
+        let properties = note.to_json_value();
+        let _ = datastore
+            .commit(Commit::Update {
+                kind: "note".to_string(),
+                id: note_id.to_string(),
+                properties,
+            })
+            .await;
+        Ok(note)
     }
 
     async fn update_note(&self, ctx: &Context<'_>, input: UpdateNoteInput) -> Result<Note> {
@@ -112,6 +115,7 @@ impl Mutation {
 
     async fn add_comment(&self, ctx: &Context<'_>, note_id: ID, content: String) -> Result<Note> {
         let datastore = ctx.data::<DSClient>().unwrap();
+        let gpt = ctx.data::<Gpt>().unwrap();
         let notes = datastore
             .run_query(&get_note_query(note_id.to_string()))
             .await;
@@ -124,6 +128,15 @@ impl Mutation {
             content,
             created_at: chrono::Utc::now(),
         });
+        let properties = note.to_json_value();
+        let _ = datastore
+            .commit(Commit::Update {
+                kind: "note".to_string(),
+                id: note_id.to_string(),
+                properties,
+            })
+            .await;
+        let note = add_companions_comment_to_note(datastore, gpt, note_id.to_string()).await?;
         let properties = note.to_json_value();
         let _ = datastore
             .commit(Commit::Update {

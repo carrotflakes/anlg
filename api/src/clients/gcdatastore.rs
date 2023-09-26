@@ -35,6 +35,7 @@ impl Client {
         let Ok(res) = serde_json::from_str::<QueryResult>(&text) else {
             panic!("parse failed: {}", text)
         };
+        // log::debug!("Datastore query response: {:?}", res);
         res.batch
             .entity_results
             .into_iter()
@@ -142,12 +143,12 @@ pub enum Commit {
     },
 }
 
-#[derive(Deserialize)]
+#[derive(Debug, Deserialize)]
 struct QueryResult {
     batch: Batch,
 }
 
-#[derive(Deserialize)]
+#[derive(Debug, Deserialize)]
 struct Batch {
     #[serde(rename = "entityResultType")]
     entity_result_type: String,
@@ -155,31 +156,31 @@ struct Batch {
     entity_results: Vec<EntityResult>,
 }
 
-#[derive(Deserialize)]
+#[derive(Debug, Deserialize)]
 struct EntityResult {
     entity: Entity,
 }
 
-#[derive(Deserialize)]
+#[derive(Debug, Deserialize)]
 pub struct Entity {
     key: Key,
     properties: Value,
 }
 
-#[derive(Deserialize)]
+#[derive(Debug, Deserialize)]
 pub struct Key {
     #[serde(rename = "partitionId")]
     pub partition_id: Value,
     pub path: Vec<Path>,
 }
 
-#[derive(Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct Path {
     pub kind: String,
     pub id: String,
 }
 
-#[derive(Deserialize)]
+#[derive(Debug, Deserialize)]
 pub struct MutationResult {
     #[serde(rename = "indexUpdates")]
     pub index_updates: Option<i32>,
@@ -187,7 +188,7 @@ pub struct MutationResult {
     pub mutation_results: Vec<MutationResultItem>,
 }
 
-#[derive(Deserialize)]
+#[derive(Debug, Deserialize)]
 pub struct MutationResultItem {
     pub key: Option<Key>,
     pub version: String,

@@ -8,7 +8,7 @@ services:
       - "8000:8000"
     environment:
       - ENV=dev
-      - RUST_LOG=debug
+      - RUST_LOG=info
       - GCP_DATASTORE_URL=http://datastore:8080
       - GCP_PROJECT_ID=anlg
       - ADDRESS=0.0.0.0:8000
