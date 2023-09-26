@@ -4,6 +4,7 @@ import { useMutation } from "urql";
 import styles from "./index.module.scss";
 import { graphql } from "../../gql";
 import { Dialog } from "../Dialog";
+import { setNote } from "../../hashChanger";
 
 export function PostButton() {
   const [showPostForm, setShowPostForm] = useState(false);
@@ -11,9 +12,15 @@ export function PostButton() {
   const [text, setText] = useState("");
 
   const submit = async () => {
-    await post({ content: text });
-    // refresh({ requestPolicy: "network-only" });
+    const res = await post({ content: text });
+    if (res.error || !res.data?.post.id) {
+      alert("Failed to post.");
+      return
+    }
+
     setText("");
+    setShowPostForm(false);
+    setNote(res.data.post.id);
   };
 
   return (

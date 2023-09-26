@@ -4,10 +4,10 @@ import { graphql } from "../../gql";
 
 import { Dialog } from "../Dialog";
 import styles from "./index.module.scss";
+import { setNote } from "../../hashChanger";
 
-export function Notes() {
+export function Notes({ noteId }: { noteId: string | null }) {
   const [notesRes] = useQuery({ query: notesQuery });
-  const [selected, setSelected] = useState<string | null>(null);
 
   // const [, deleteMut] = useMutation(deleteMutation);
   // const deleteNote = async (id: string) => {
@@ -15,7 +15,7 @@ export function Notes() {
   //   refresh({ requestPolicy: "network-only" });
   // };
 
-  const selectedNote = notesRes.data?.notes.find((n) => n.id === selected);
+  const selectedNote = notesRes.data?.notes.find((n) => n.id === noteId);
 
   return (
     <div>
@@ -33,7 +33,7 @@ export function Notes() {
               className={styles.card}
               key={note.id}
               onClick={(e) => {
-                setSelected(note.id);
+                setNote(note.id);
                 e.stopPropagation();
               }}
             >
@@ -44,8 +44,8 @@ export function Notes() {
             </div>
           )
       )}
-      {selected && (
-        <Dialog onClose={() => setSelected(null)}>
+      {noteId && (
+        <Dialog onClose={() => setNote(null)}>
           {selectedNote && <Note note={selectedNote} />}
         </Dialog>
       )}
