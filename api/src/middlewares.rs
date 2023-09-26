@@ -19,7 +19,10 @@ pub fn new_cors() -> Cors {
     }
 }
 
-pub fn new_auth() -> actix_web_httpauth::middleware::HttpAuthentication<
+/// If `token` is `None`, then no authentication is required.
+pub fn new_auth(
+    token: Option<String>,
+) -> actix_web_httpauth::middleware::HttpAuthentication<
     actix_web_httpauth::extractors::bearer::BearerAuth,
     Box<
         dyn Fn(
@@ -37,7 +40,6 @@ pub fn new_auth() -> actix_web_httpauth::middleware::HttpAuthentication<
         >,
     >,
 > {
-    let token = std::env::var("ACCESS_TOKEN").ok();
     let process_fn: Box<
         dyn Fn(
             actix_web::dev::ServiceRequest,
@@ -48,7 +50,7 @@ pub fn new_auth() -> actix_web_httpauth::middleware::HttpAuthentication<
               auth: actix_web_httpauth::extractors::bearer::BearerAuth| {
             let token = token.clone();
             Box::pin(async move {
-                if token.map(|t| t == auth.token()) == Some(true) {
+                if token.is_none() || token.map(|t| t == auth.token()) == Some(true) {
                     Ok(req)
                 } else {
                     let config = req

@@ -42,11 +42,13 @@ async fn main() -> std::io::Result<()> {
             .extension(async_graphql::extensions::Logger)
             .finish();
 
+        let token = std::env::var("ACCESS_TOKEN").ok();
+
         App::new()
             .service(
                 web::resource("/graphql")
                     .guard(guard::Post())
-                    .wrap(middlewares::new_auth())
+                    .wrap(middlewares::new_auth(token))
                     .to(GraphQL::new(schema)),
             )
             .service(
