@@ -94,21 +94,28 @@ function Note({
     deletedAt?: string | null;
   };
 }) {
+  const [isProcessing, setIsProcessing] = useState(false);
   const [, deleteMut] = useMutation(deleteMutation);
   const [, requestCompanionsCommentMut] = useMutation(
     requestCompanionsCommentMutation
   );
   const [, addCommentMut] = useMutation(addCommentMutation);
   const deleteNote = async () => {
+    setIsProcessing(true);
     await deleteMut({ id: note.id });
+    setIsProcessing(false);
   };
   const requestCompanionsComment = async () => {
+    setIsProcessing(true);
     await requestCompanionsCommentMut({ noteId: note.id });
+    setIsProcessing(false);
   };
   const [text, setText] = useState("");
   const addComment = async () => {
+    setIsProcessing(true);
     await addCommentMut({ noteId: note.id, content: text });
     setText("");
+    setIsProcessing(false);
   };
 
   return (
@@ -117,7 +124,7 @@ function Note({
       <span className={styles.time}>
         {formatDate(new Date(note.createdAt))}
       </span>
-      <button onClick={deleteNote}>Delete</button>
+      <button onClick={deleteNote} disabled={isProcessing}>Delete</button>
       {note.messages.map((m) => (
         <div className={styles.Message} key={m.createdAt}>
           <header>
@@ -133,8 +140,8 @@ function Note({
       ))}
       <div>
         <textarea className={styles.messageForm} value={text} onChange={(e) => setText(e.target.value)} />
-        <button onClick={addComment}>Post</button>
-        <button onClick={requestCompanionsComment}>Request</button>
+        <button onClick={addComment} disabled={isProcessing}>Post</button>
+        <button onClick={requestCompanionsComment} disabled={isProcessing}>Request</button>
       </div>
     </div>
   );

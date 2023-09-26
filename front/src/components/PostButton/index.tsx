@@ -7,11 +7,13 @@ import { Dialog } from "../Dialog";
 import { setNote } from "../../hashChanger";
 
 export function PostButton() {
+  const [isProcessing, setIsProcessing] = useState(false);
   const [showPostForm, setShowPostForm] = useState(false);
   const [, post] = useMutation(postMutation);
   const [text, setText] = useState("");
 
   const submit = async () => {
+    setIsProcessing(true);
     const res = await post({ content: text });
     if (res.error || !res.data?.post.id) {
       alert("Failed to post.");
@@ -20,6 +22,7 @@ export function PostButton() {
 
     setText("");
     setShowPostForm(false);
+    setIsProcessing(false);
     setNote(res.data.post.id);
   };
 
@@ -31,7 +34,7 @@ export function PostButton() {
         <Dialog onClose={() => setShowPostForm(false)}>
           <div className={styles.postForm}>
             <textarea value={text} onChange={(e) => setText(e.target.value)} />
-            <button onClick={submit}>Post</button>
+            <button onClick={submit} disabled={isProcessing}>Post</button>
           </div>
         </Dialog>
       )}
