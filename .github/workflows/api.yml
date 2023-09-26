@@ -49,4 +49,5 @@ jobs:
           region: asia-northeast1
           env_vars: |
             ENV=production
+            RUST_LOG=info
             GCP_PROJECT_ID=anlg-399912
