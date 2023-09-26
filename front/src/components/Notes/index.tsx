@@ -1,21 +1,13 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { useMutation, useQuery } from "urql";
 import { graphql } from "../../gql";
 
+import { setNote } from "../../hashChanger";
 import { Dialog } from "../Dialog";
 import styles from "./index.module.scss";
-import { setNote } from "../../hashChanger";
 
 export function Notes({ noteId }: { noteId: string | null }) {
   const [notesRes] = useQuery({ query: notesQuery });
-
-  // const [, deleteMut] = useMutation(deleteMutation);
-  // const deleteNote = async (id: string) => {
-  //   await deleteMut({ id });
-  //   refresh({ requestPolicy: "network-only" });
-  // };
-
-  const selectedNote = notesRes.data?.notes.find((n) => n.id === noteId);
 
   return (
     <div>
@@ -46,7 +38,7 @@ export function Notes({ noteId }: { noteId: string | null }) {
       )}
       {noteId && (
         <Dialog onClose={() => setNote(null)}>
-          {selectedNote && <Note note={selectedNote} />}
+          <Note noteId={noteId} />
         </Dialog>
       )}
     </div>
@@ -58,11 +50,6 @@ const notesQuery = graphql(`
     notes {
       id
       content
-      messages {
-        role
-        content
-        createdAt
-      }
       createdAt
       updatedAt
       deletedAt
@@ -79,37 +66,32 @@ const deleteMutation = graphql(`
 `);
 
 function Note({
-  note,
+  noteId,
 }: {
-  note: {
-    id: string;
-    content: string;
-    messages: {
-      role: string;
-      content: string;
-      createdAt: string;
-    }[];
-    createdAt: string;
-    updatedAt: string;
-    deletedAt?: string | null;
-  };
+  noteId: string;
 }) {
+  const [noteRes] = useQuery({ query: noteQuery, variables: { id: noteId } });
+  const note = noteRes.data?.note ?? { id: "" };
+
   const [isProcessing, setIsProcessing] = useState(false);
   const [, deleteMut] = useMutation(deleteMutation);
   const [, requestCompanionsCommentMut] = useMutation(
     requestCompanionsCommentMutation
   );
   const [, addCommentMut] = useMutation(addCommentMutation);
+
   const deleteNote = async () => {
     setIsProcessing(true);
     await deleteMut({ id: note.id });
     setIsProcessing(false);
   };
-  const requestCompanionsComment = async () => {
+
+  const requestCompanionsComment = useCallback(async () => {
     setIsProcessing(true);
     await requestCompanionsCommentMut({ noteId: note.id });
     setIsProcessing(false);
-  };
+  }, [note.id, requestCompanionsCommentMut]);
+
   const [text, setText] = useState("");
   const addComment = async () => {
     setIsProcessing(true);
@@ -117,6 +99,13 @@ function Note({
     setText("");
     setIsProcessing(false);
   };
+
+  if (!('content' in note))
+    return (
+      <div className={styles.Note}>
+        <pre>loading...</pre>
+      </div>
+    );
 
   return (
     <div className={styles.Note}>
@@ -146,6 +135,23 @@ function Note({
     </div>
   );
 }
+
+const noteQuery = graphql(`
+  query note($id: ID!) {
+    note(id: $id) {
+      id
+      content
+      messages {
+        role
+        content
+        createdAt
+      }
+      createdAt
+      updatedAt
+      deletedAt
+    }
+  }
+`);
 
 const requestCompanionsCommentMutation = graphql(`
   mutation requestCompanionsComment($noteId: ID!) {

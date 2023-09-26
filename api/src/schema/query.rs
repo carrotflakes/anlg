@@ -19,7 +19,7 @@ impl Query {
         let notes = datastore
             .run_query(&json!({
                 "query": {
-                    "limit": 50,
+                    // "limit": 50,
                     "kind": [{
                         "name": "note"
                     }],
@@ -39,4 +39,45 @@ impl Query {
             .map(|(path, v)| Note::from_json_value(v, path.id))
             .collect()
     }
+
+    async fn note(&self, ctx: &Context<'_>, id: ID) -> Option<Note> {
+        let datastore = ctx.data::<DSClient>().unwrap();
+        let notes = datastore.run_query(&get_note_query(id.to_string())).await;
+        notes
+            .into_iter()
+            .map(|(path, v)| Note::from_json_value(v, path.id))
+            .next()
+    }
+}
+
+pub fn get_note_query(note_id: String) -> serde_json::Value {
+    json!({
+        "query": {
+            "limit": 1,
+            "kind": [{
+                "name": "note"
+            }],
+            "filter": {
+                "propertyFilter": {
+                    "property": {
+                        "name": "__key__"
+                    },
+                    "op": "EQUAL",
+                    "value": {
+                        "keyValue": {
+                            "partitionId": {
+                                "namespaceId": ""
+                            },
+                            "path": [
+                                {
+                                    "kind": "note",
+                                    "id": note_id
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        }
+    })
 }

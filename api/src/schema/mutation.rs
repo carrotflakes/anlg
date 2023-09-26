@@ -2,9 +2,12 @@ use async_graphql::*;
 use gptcl::model::ChatMessage;
 use serde_json::json;
 
-use crate::clients::{
-    gcdatastore::{Client as DSClient, Commit},
-    gpt::Gpt,
+use crate::{
+    clients::{
+        gcdatastore::{Client as DSClient, Commit},
+        gpt::Gpt,
+    },
+    schema::query::get_note_query,
 };
 
 use super::{
@@ -35,13 +38,14 @@ impl Mutation {
         let res = datastore
             .commit(Commit::Insert {
                 kind: "note".to_string(),
-                properties,
+                properties: properties.clone(),
             })
             .await;
         let note_id = res.mutation_results[0].key.as_ref().unwrap().path[0]
             .id
             .clone();
-        let note = add_companions_comment_to_note(datastore, gpt, note_id.clone()).await?;
+        let note = Note::from_json_value(properties, note_id.clone());
+        let note = add_companions_comment_to_note(datastore, gpt, note).await?;
         let properties = note.to_json_value();
         let _ = datastore
             .commit(Commit::Update {
@@ -101,7 +105,14 @@ impl Mutation {
     async fn request_companions_comment(&self, ctx: &Context<'_>, note_id: ID) -> Result<Note> {
         let datastore = ctx.data::<DSClient>().unwrap();
         let gpt = ctx.data::<Gpt>().unwrap();
-        let note = add_companions_comment_to_note(datastore, gpt, note_id.to_string()).await?;
+        let notes = datastore
+            .run_query(&get_note_query(note_id.to_string()))
+            .await;
+        let Some(note) = notes.get(0).cloned() else {
+            return Err("not found".into());
+        };
+        let mut note = Note::from_json_value(note.1, note_id.to_string());
+        let note = add_companions_comment_to_note(datastore, gpt, note).await?;
         let properties = note.to_json_value();
         let _ = datastore
             .commit(Commit::Update {
@@ -136,7 +147,7 @@ impl Mutation {
                 properties,
             })
             .await;
-        let note = add_companions_comment_to_note(datastore, gpt, note_id.to_string()).await?;
+        let note = add_companions_comment_to_note(datastore, gpt, note).await?;
         let properties = note.to_json_value();
         let _ = datastore
             .commit(Commit::Update {
@@ -161,48 +172,11 @@ pub struct UpdateNoteInput {
     pub content: String,
 }
 
-pub fn get_note_query(note_id: String) -> serde_json::Value {
-    json!({
-        "query": {
-            "limit": 1,
-            "kind": [{
-                "name": "note"
-            }],
-            "filter": {
-                "propertyFilter": {
-                    "property": {
-                        "name": "__key__"
-                    },
-                    "op": "EQUAL",
-                    "value": {
-                        "keyValue": {
-                            "partitionId": {
-                                "namespaceId": ""
-                            },
-                            "path": [
-                                {
-                                    "kind": "note",
-                                    "id": note_id
-                                }
-                            ]
-                        }
-                    }
-                }
-            }
-        }
-    })
-}
-
 pub async fn add_companions_comment_to_note(
     datastore: &DSClient,
     gpt: &Gpt,
-    note_id: String,
+    mut note: Note,
 ) -> Result<Note> {
-    let notes = datastore.run_query(&get_note_query(note_id.clone())).await;
-    let Some(note) = notes.get(0).cloned() else {
-        return Err("not found".into());
-    };
-    let mut note = Note::from_json_value(note.1, note_id.clone());
     let prompt = if note.messages.is_empty() {
         format!(
             r"You're a companion. The user posts a note here:
@@ -221,7 +195,7 @@ Please write a comment for the user in about 10 words. No quotes needed. Don't e
 
 # Comments (in chronological order){}
 
-Please write a comment for the user in about 10 words.",
+Please write a comment for the user in about 10 words. No quotes needed.",
             note.content,
             note.messages
                 .iter()
