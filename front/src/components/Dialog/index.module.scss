@@ -8,4 +8,8 @@
   &:focus {
     outline: none;
   }
+
+  &::backdrop {
+    background: rgba(0, 0, 0, 0.25);
+  }
 }
