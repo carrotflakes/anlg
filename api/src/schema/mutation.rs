@@ -127,9 +127,31 @@ pub async fn add_companions_comment_to_note(
     //         )
     //     };
 
+    let context = if false {
+        let mut recent_logs = repository.get_notes(false, Some(10)).await?;
+        recent_logs.retain(|n| n.id != note.id);
+
+        format!(
+            r#"{{"recentOtherNotes":{}}}"#,
+            serde_json::to_string(
+                &recent_logs
+                    .iter()
+                    .map(|n| json!({
+                        "note": n.content,
+                        "createdAt": n.created_at.to_rfc3339(),
+                    }))
+                    .collect::<Vec<_>>()
+            )
+            .unwrap()
+        )
+    } else {
+        "null".to_owned()
+    };
+
     let prompt = format!(
-        r#"{{"note":{:?},"comments":{}}}"#,
+        r#"{{"note":{:?},"createdAt":{:?},"comments":{},"context":{}}}"#,
         note.content,
+        note.created_at.to_rfc3339(),
         serde_json::to_string(
             &note
                 .messages
@@ -147,7 +169,8 @@ pub async fn add_companions_comment_to_note(
                 })])
                 .collect::<Vec<_>>()
         )
-        .unwrap()
+        .unwrap(),
+        context,
     );
     log::info!("prompt: {:?}", prompt);
     let res = gpt

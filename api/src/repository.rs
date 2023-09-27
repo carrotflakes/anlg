@@ -18,26 +18,44 @@ impl Repository {
         Self { datastore }
     }
 
-    pub async fn get_notes(&self) -> Result<Vec<Note>> {
-        let notes = self
-            .datastore
-            .run_query(&json!({
-                "query": {
-                    // "limit": 50,
-                    "kind": [{
-                        "name": "note"
-                    }],
-                    "order": [
-                        {
-                            "property": {
-                                "name": "createdAt"
-                            },
-                            "direction": "DESCENDING"
-                        }
-                    ]
+    pub async fn get_notes(
+        &self,
+        include_deleted: bool,
+        limit: Option<usize>,
+    ) -> Result<Vec<Note>> {
+        let mut req = json!({
+            "query": {
+                "kind": [{
+                    "name": "note"
+                }],
+                "order": [
+                    {
+                        "property": {
+                            "name": "createdAt"
+                        },
+                        "direction": "DESCENDING"
+                    }
+                ]
+            }
+        });
+        if !include_deleted {
+            req["query"]["filter"] = json!({
+                "propertyFilter": {
+                    "property": {
+                        "name": "deletedAt"
+                    },
+                    "op": "EQUAL",
+                    "value": {
+                        "nullValue": "NULL_VALUE"
+                    }
                 }
-            }))
-            .await;
+            });
+        }
+        if let Some(limit) = limit {
+            req["query"]["limit"] = json!(limit);
+        }
+
+        let notes = self.datastore.run_query(&req).await;
         let notes = notes
             .into_iter()
             .map(|(path, v)| Note::from_json_value(v, path.id))

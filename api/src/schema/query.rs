@@ -13,9 +13,12 @@ impl Query {
         a + b
     }
 
-    async fn notes(&self, ctx: &Context<'_>) -> Result<Vec<Note>> {
+    async fn notes(&self, ctx: &Context<'_>, include_deleted: bool) -> Result<Vec<Note>> {
         let repository = ctx.data::<Repository>().unwrap();
-        repository.get_notes().await.map_err(Error::from)
+        repository
+            .get_notes(include_deleted, None)
+            .await
+            .map_err(Error::from)
     }
 
     async fn note(&self, ctx: &Context<'_>, id: ID) -> Result<Option<Note>> {

@@ -47,7 +47,7 @@ export function Notes({ noteId }: { noteId: string | null }) {
 
 const notesQuery = graphql(`
   query notes {
-    notes {
+    notes(includeDeleted: false) {
       id
       content
       createdAt
