@@ -153,7 +153,8 @@ pub async fn add_companions_comment_to_note(
     let res = gpt
         .call(&[
             ChatMessage::from_system(
-                r#"The user post a note as a JSON. You can leave a comment for the user. Please provide the text to be inserted in place of <TEXT> in the JSON. Your answer must be in the format {{"text":"<TEXT>"}}"#.to_owned(),
+                r#"The user post a note as a JSON. You can leave a comment for the user. Please provide the text to be inserted in place of <TEXT> in the JSON. Your answer must be in the format {{"text":"<TEXT>"}}.
+Match the language to the user."#.to_owned(),
             ),
             ChatMessage::from_user(prompt),
         ])
