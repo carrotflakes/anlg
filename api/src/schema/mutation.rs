@@ -2,13 +2,7 @@ use async_graphql::*;
 use gptcl::model::ChatMessage;
 use serde_json::json;
 
-use crate::{
-    clients::{
-        gcdatastore::{Client as DSClient, Commit},
-        gpt::Gpt,
-    },
-    schema::query::get_note_query,
-};
+use crate::{clients::gpt::Gpt, repository::Repository};
 
 use super::{
     note::{Message, Role},
@@ -20,142 +14,71 @@ pub struct Mutation;
 #[Object]
 impl Mutation {
     async fn post(&self, ctx: &Context<'_>, content: String) -> Result<Note> {
-        let datastore = ctx.data::<DSClient>().unwrap();
+        let repository = ctx.data::<Repository>().unwrap();
         let gpt = ctx.data::<Gpt>().unwrap();
         let created_at = chrono::Utc::now();
-        let properties = json!({
-            "content": {
-                "excludeFromIndexes": true,
-                "stringValue": content
-            },
-            "createdAt": {
-                "timestampValue": created_at
-            },
-            "updatedAt": {
-                "timestampValue": created_at
-            }
-        });
-        let res = datastore
-            .commit(Commit::Insert {
-                kind: "note".to_string(),
-                properties: properties.clone(),
-            })
-            .await;
-        let note_id = res.mutation_results[0].key.as_ref().unwrap().path[0]
-            .id
-            .clone();
-        let note = Note::from_json_value(properties, note_id.clone());
-        let note = add_companions_comment_to_note(datastore, gpt, note).await?;
-        let properties = note.to_json_value();
-        let _ = datastore
-            .commit(Commit::Update {
-                kind: "note".to_string(),
-                id: note_id.to_string(),
-                properties,
-            })
-            .await;
+        let mut note = Note {
+            id: "".into(),
+            content: content.clone(),
+            messages: vec![],
+            created_at,
+            updated_at: created_at,
+            deleted_at: None,
+        };
+        repository.insert_note(&mut note).await?;
+        let note = add_companions_comment_to_note(repository, gpt, note).await?;
+        repository.update_note(&note).await?;
         Ok(note)
     }
 
     async fn update_note(&self, ctx: &Context<'_>, input: UpdateNoteInput) -> Result<Note> {
-        let datastore = ctx.data::<DSClient>().unwrap();
+        let repository = ctx.data::<Repository>().unwrap();
         let updated_at = chrono::Utc::now();
-        let notes = datastore
-            .run_query(&get_note_query(input.id.to_string()))
-            .await;
-        let Some(note) = notes.get(0).cloned() else {
+        let Some(mut note) = repository.get_note(input.id.to_string()).await? else {
             return Err("not found".into());
         };
-        let mut note = Note::from_json_value(note.1, input.id.to_string());
         note.content = input.content;
         note.updated_at = updated_at;
-        let properties = note.to_json_value();
-        let _ = datastore
-            .commit(Commit::Update {
-                kind: "note".to_string(),
-                id: input.id.to_string(),
-                properties,
-            })
-            .await;
+        repository.update_note(&note).await?;
         Ok(note)
     }
 
     async fn delete_note(&self, ctx: &Context<'_>, note_id: ID) -> Result<Note> {
-        let datastore = ctx.data::<DSClient>().unwrap();
+        let repository = ctx.data::<Repository>().unwrap();
         let deleted_at = chrono::Utc::now();
-        let notes = datastore
-            .run_query(&get_note_query(note_id.to_string()))
-            .await;
-        let Some(note) = notes.get(0).cloned() else {
+        let Some(mut note) = repository.get_note(note_id.to_string()).await? else {
             return Err("not found".into());
         };
-        let mut note = Note::from_json_value(note.1, note_id.to_string());
         note.deleted_at = Some(deleted_at);
-        let properties = note.to_json_value();
-        let _ = datastore
-            .commit(Commit::Update {
-                kind: "note".to_string(),
-                id: note_id.to_string(),
-                properties,
-            })
-            .await;
+        repository.update_note(&note).await?;
         Ok(note)
     }
 
     async fn request_companions_comment(&self, ctx: &Context<'_>, note_id: ID) -> Result<Note> {
-        let datastore = ctx.data::<DSClient>().unwrap();
+        let repository = ctx.data::<Repository>().unwrap();
         let gpt = ctx.data::<Gpt>().unwrap();
-        let notes = datastore
-            .run_query(&get_note_query(note_id.to_string()))
-            .await;
-        let Some(note) = notes.get(0).cloned() else {
+        let Some(note) = repository.get_note(note_id.to_string()).await? else {
             return Err("not found".into());
         };
-        let mut note = Note::from_json_value(note.1, note_id.to_string());
-        let note = add_companions_comment_to_note(datastore, gpt, note).await?;
-        let properties = note.to_json_value();
-        let _ = datastore
-            .commit(Commit::Update {
-                kind: "note".to_string(),
-                id: note_id.to_string(),
-                properties,
-            })
-            .await;
+        let note = add_companions_comment_to_note(repository, gpt, note).await?;
+        repository.update_note(&note).await?;
         Ok(note)
     }
 
     async fn add_comment(&self, ctx: &Context<'_>, note_id: ID, content: String) -> Result<Note> {
-        let datastore = ctx.data::<DSClient>().unwrap();
+        let repository = ctx.data::<Repository>().unwrap();
         let gpt = ctx.data::<Gpt>().unwrap();
-        let notes = datastore
-            .run_query(&get_note_query(note_id.to_string()))
-            .await;
-        let Some(note) = notes.get(0).cloned() else {
+        let Some(mut note) = repository.get_note(note_id.to_string()).await? else {
             return Err("not found".into());
         };
-        let mut note = Note::from_json_value(note.1, note_id.to_string());
         note.messages.push(Message {
             role: Role::User,
             content,
             created_at: chrono::Utc::now(),
         });
-        let properties = note.to_json_value();
-        let _ = datastore
-            .commit(Commit::Update {
-                kind: "note".to_string(),
-                id: note_id.to_string(),
-                properties,
-            })
-            .await;
-        let note = add_companions_comment_to_note(datastore, gpt, note).await?;
-        let properties = note.to_json_value();
-        let _ = datastore
-            .commit(Commit::Update {
-                kind: "note".to_string(),
-                id: note_id.to_string(),
-                properties,
-            })
-            .await;
+        repository.update_note(&note).await?;
+        let note = add_companions_comment_to_note(repository, gpt, note).await?;
+        repository.update_note(&note).await?;
         Ok(note)
     }
 
@@ -173,7 +96,7 @@ pub struct UpdateNoteInput {
 }
 
 pub async fn add_companions_comment_to_note(
-    datastore: &DSClient,
+    repository: &Repository,
     gpt: &Gpt,
     mut note: Note,
 ) -> Result<Note> {
@@ -204,33 +127,34 @@ pub async fn add_companions_comment_to_note(
     //         )
     //     };
 
-    let note_info = json!({
-        "note": note.content,
-        "messages": note.messages.iter().map(|m|
-            json!({
-                "role": match m.role {
-                    Role::Companion => "you",
-                    Role::User => "user",
-                },
-                "text": m.content,
-            })
-        ).chain([json!({
-            "role": "you",
-            "text": "<TEXT>",
-        })]).collect::<Vec<_>>(),
-    });
     let prompt = format!(
-        r#"The user has posted a note. You can leave a comment for the user. Please provide the text to be inserted in place of <TEXT> in the following JSON. Your answer must be in the format {{"text":"<TEXT>"}}.
-
-{}"#,
-        serde_json::to_string(&note_info).unwrap()
+        r#"{{"note":{:?},"comments":{}}}"#,
+        note.content,
+        serde_json::to_string(
+            &note
+                .messages
+                .iter()
+                .map(|m| json!({
+                    "role": match m.role {
+                        Role::Companion => "you",
+                        Role::User => "user",
+                    },
+                    "text": m.content,
+                }))
+                .chain([json!({
+                    "role": "you",
+                    "text": "<TEXT>",
+                })])
+                .collect::<Vec<_>>()
+        )
+        .unwrap()
     );
     log::info!("prompt: {:?}", prompt);
     let res = gpt
         .call(&[
-            // ChatMessage::from_system(
-            //     "you must respond as if you were treating a friend.".to_owned(),
-            // ),
+            ChatMessage::from_system(
+                r#"The user post a note as a JSON. You can leave a comment for the user. Please provide the text to be inserted in place of <TEXT> in the JSON. Your answer must be in the format {{"text":"<TEXT>"}}"#.to_owned(),
+            ),
             ChatMessage::from_user(prompt),
         ])
         .await?;

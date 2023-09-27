@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use actix_web::{guard, web, App, HttpResponse, HttpServer, Result};
 use async_graphql::{http::GraphiQLSource, EmptySubscription, Schema};
 use async_graphql_actix_web::GraphQL;
@@ -32,12 +34,14 @@ async fn main() -> std::io::Result<()> {
             // gcdatastore::TokenGetter::ServiceAccount(gcp::TokenGetter::from_credentials_json(&cred))
         };
         let datastore = gcdatastore::Client::new(datastore_url, project_id, token_getter);
+        let datastore = Arc::new(datastore);
+        let repository = anlg_api::repository::Repository::new(datastore.clone());
 
         let openai_api_key = std::env::var("OPENAI_API_KEY").unwrap();
         let gpt = gpt::new_gpt(openai_api_key);
 
         let schema = Schema::build(schema::Query, schema::Mutation, EmptySubscription)
-            .data(datastore)
+            .data(repository)
             .data(gpt)
             .extension(async_graphql::extensions::Logger)
             .finish();

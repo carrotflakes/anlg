@@ -1,7 +1,6 @@
 use async_graphql::*;
-use serde_json::json;
 
-use crate::clients::gcdatastore::Client as DSClient;
+use crate::repository::Repository;
 
 use super::Note;
 
@@ -14,70 +13,16 @@ impl Query {
         a + b
     }
 
-    async fn notes(&self, ctx: &Context<'_>) -> Vec<Note> {
-        let datastore = ctx.data::<DSClient>().unwrap();
-        let notes = datastore
-            .run_query(&json!({
-                "query": {
-                    // "limit": 50,
-                    "kind": [{
-                        "name": "note"
-                    }],
-                    "order": [
-                        {
-                            "property": {
-                                "name": "createdAt"
-                            },
-                            "direction": "DESCENDING"
-                        }
-                    ]
-                }
-            }))
-            .await;
-        notes
-            .into_iter()
-            .map(|(path, v)| Note::from_json_value(v, path.id))
-            .collect()
+    async fn notes(&self, ctx: &Context<'_>) -> Result<Vec<Note>> {
+        let repository = ctx.data::<Repository>().unwrap();
+        repository.get_notes().await.map_err(Error::from)
     }
 
-    async fn note(&self, ctx: &Context<'_>, id: ID) -> Option<Note> {
-        let datastore = ctx.data::<DSClient>().unwrap();
-        let notes = datastore.run_query(&get_note_query(id.to_string())).await;
-        notes
-            .into_iter()
-            .map(|(path, v)| Note::from_json_value(v, path.id))
-            .next()
+    async fn note(&self, ctx: &Context<'_>, id: ID) -> Result<Option<Note>> {
+        let repository = ctx.data::<Repository>().unwrap();
+        repository
+            .get_note(id.to_string())
+            .await
+            .map_err(Error::from)
     }
-}
-
-pub fn get_note_query(note_id: String) -> serde_json::Value {
-    json!({
-        "query": {
-            "limit": 1,
-            "kind": [{
-                "name": "note"
-            }],
-            "filter": {
-                "propertyFilter": {
-                    "property": {
-                        "name": "__key__"
-                    },
-                    "op": "EQUAL",
-                    "value": {
-                        "keyValue": {
-                            "partitionId": {
-                                "namespaceId": ""
-                            },
-                            "path": [
-                                {
-                                    "kind": "note",
-                                    "id": note_id
-                                }
-                            ]
-                        }
-                    }
-                }
-            }
-        }
-    })
 }
