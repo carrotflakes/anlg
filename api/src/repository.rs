@@ -55,7 +55,7 @@ impl Repository {
             req["query"]["limit"] = json!(limit);
         }
 
-        let notes = self.datastore.run_query(&req).await;
+        let notes = self.datastore.run_query(&req).await?;
         let notes = notes
             .into_iter()
             .map(|(path, v)| Note::from_json_value(v, path.id))
@@ -67,7 +67,7 @@ impl Repository {
         let notes = self
             .datastore
             .run_query(&get_note_query(id.to_string()))
-            .await;
+            .await?;
         let note = notes
             .into_iter()
             .map(|(path, v)| Note::from_json_value(v, path.id))
@@ -83,7 +83,7 @@ impl Repository {
                 kind: "note".to_string(),
                 properties,
             })
-            .await;
+            .await?;
         let note_id = res.mutation_results[0].key.as_ref().unwrap().path[0]
             .id
             .clone();

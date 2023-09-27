@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 
+type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
+
 pub struct Client {
     reqwest: reqwest::Client,
     url: String,
@@ -18,7 +20,7 @@ impl Client {
         }
     }
 
-    pub async fn run_query<T: Serialize>(&self, query: &T) -> Vec<(Path, Value)> {
+    pub async fn run_query<T: Serialize>(&self, query: &T) -> Result<Vec<(Path, Value)>> {
         let access_token = self.token_getter.get().await;
         let client = &self.reqwest;
         let res = client
@@ -33,17 +35,19 @@ impl Client {
             .unwrap();
         let text = res.text().await.unwrap();
         let Ok(res) = serde_json::from_str::<QueryResult>(&text) else {
-            panic!("parse failed: {}", text)
+            return Err(format!("parse failed: {}", text).into());
         };
         // log::debug!("Datastore query response: {:?}", res);
-        res.batch
+        let entities = res
+            .batch
             .entity_results
             .into_iter()
             .map(|er| (er.entity.key.path[0].clone(), er.entity.properties))
-            .collect()
+            .collect();
+        Ok(entities)
     }
 
-    pub async fn commit(&self, commit: Commit) -> MutationResult {
+    pub async fn commit(&self, commit: Commit) -> Result<MutationResult> {
         let mutation = match commit {
             Commit::Insert { kind, properties } => {
                 json!({
@@ -121,9 +125,9 @@ impl Client {
         let text = res.text().await.unwrap();
         let Ok(res) = serde_json::from_str::<MutationResult>(&text) else {
             log::info!("Request: {:?}", serde_json::to_string(&mutation).unwrap());
-            panic!("parse failed: {}", text)
+            return Err(format!("parse failed: {}", text).into());
         };
-        res
+        Ok(res)
     }
 }
 
