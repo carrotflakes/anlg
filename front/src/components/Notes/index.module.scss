@@ -1,8 +1,17 @@
+.Notes {
+  overflow: auto;
+
+  & > div {
+    vertical-align: top;
+  }
+}
+
 .card {
   margin: 8px;
   display: inline-block;
   min-width: 10rem;
   min-height: 2.5rem;
+  max-width: 20rem;
   background: #fff;
   border-radius: 8px;
   padding: 8px 12px;
@@ -12,6 +21,8 @@
   pre {
     margin: 0;
     font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+    overflow-wrap: break-all;
+    white-space: pre-wrap;
   }
 
   .time {
@@ -21,9 +32,14 @@
 }
 
 .Note {
+  max-width: 80vw;
+
   pre {
     margin: 0;
     font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+    overflow: auto;
+    overflow-wrap: break-word;
+    white-space: pre-wrap;
   }
 
   .time {

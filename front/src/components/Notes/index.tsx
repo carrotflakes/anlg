@@ -10,7 +10,7 @@ export function Notes({ noteId }: { noteId: string | null }) {
   const [notesRes] = useQuery({ query: notesQuery });
 
   return (
-    <div>
+    <div className={styles.Notes}>
       {notesRes.error && "The server is unavailable."}
       {notesRes.data?.notes.map(
         (note: {
