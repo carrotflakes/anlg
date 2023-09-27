@@ -114,6 +114,7 @@ function Note({
         {formatDate(new Date(note.createdAt))}
       </span>
       <button onClick={deleteNote} disabled={isProcessing}>Delete</button>
+      <div className={styles.separator}></div>
       {note.messages.map((m) => (
         <div className={styles.Message} key={m.createdAt}>
           <header>

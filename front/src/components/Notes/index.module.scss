@@ -46,6 +46,11 @@
     font-size: 0.8rem;
     opacity: 0.8;
   }
+
+  .separator {
+    margin: 8px 0;
+    border-top: solid 1px #ccc;
+  }
 }
 
 .Message {
@@ -67,6 +72,7 @@
 
 .messageForm {
   margin: 8px;
+  width: 20rem;
   padding: 8px;
   border-radius: 8px;
   border: solid 1px #ccc;
