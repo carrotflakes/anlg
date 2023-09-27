@@ -1,0 +1,6 @@
+indexes:
+- kind: note
+  properties:
+  - name: deletedAt
+  - name: createdAt
+    direction: desc
