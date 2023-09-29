@@ -23,22 +23,25 @@ async fn main() -> std::io::Result<()> {
     log::info!("ENV: {}", env);
     log::info!("GraphiQL IDE: http://localhost:8000/graphql");
 
+    let datastore_url =
+        std::env::var("GCP_DATASTORE_URL").unwrap_or("https://datastore.googleapis.com".to_owned());
+    let project_id = std::env::var("GCP_PROJECT_ID").expect("GCP_PROJECT_ID is not set");
+    let openai_api_key = std::env::var("OPENAI_API_KEY").expect("OPENAI_API_KEY is not set");
+    let token = std::env::var("ACCESS_TOKEN").ok();
+
     HttpServer::new(move || {
-        let datastore_url = std::env::var("GCP_DATASTORE_URL")
-            .unwrap_or("https://datastore.googleapis.com".to_owned());
-        let project_id = std::env::var("GCP_PROJECT_ID").unwrap();
         let token_getter = if env == "dev" {
             gcdatastore::TokenGetter::Dummy
         } else {
             gcdatastore::TokenGetter::ACD
             // gcdatastore::TokenGetter::ServiceAccount(gcp::TokenGetter::from_credentials_json(&cred))
         };
-        let datastore = gcdatastore::Client::new(datastore_url, project_id, token_getter);
+        let datastore =
+            gcdatastore::Client::new(datastore_url.clone(), project_id.clone(), token_getter);
         let datastore = Arc::new(datastore);
         let repository = anlg_api::repository::Repository::new(datastore.clone());
 
-        let openai_api_key = std::env::var("OPENAI_API_KEY").unwrap();
-        let gpt = gpt::new_gpt(openai_api_key);
+        let gpt = gpt::new_gpt(openai_api_key.clone());
 
         let schema = Schema::build(schema::Query, schema::Mutation, EmptySubscription)
             .data(repository)
@@ -46,13 +49,11 @@ async fn main() -> std::io::Result<()> {
             .extension(async_graphql::extensions::Logger)
             .finish();
 
-        let token = std::env::var("ACCESS_TOKEN").ok();
-
         App::new()
             .service(
                 web::resource("/graphql")
                     .guard(guard::Post())
-                    .wrap(middlewares::new_auth(token))
+                    .wrap(middlewares::new_auth(token.clone()))
                     .to(GraphQL::new(schema)),
             )
             .service(
