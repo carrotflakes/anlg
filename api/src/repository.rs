@@ -23,39 +23,8 @@ impl Repository {
         include_deleted: bool,
         limit: Option<usize>,
     ) -> Result<Vec<Note>> {
-        let mut req = json!({
-            "query": {
-                "kind": [{
-                    "name": "note"
-                }],
-                "order": [
-                    {
-                        "property": {
-                            "name": "createdAt"
-                        },
-                        "direction": "DESCENDING"
-                    }
-                ]
-            }
-        });
-        if !include_deleted {
-            req["query"]["filter"] = json!({
-                "propertyFilter": {
-                    "property": {
-                        "name": "deletedAt"
-                    },
-                    "op": "EQUAL",
-                    "value": {
-                        "nullValue": "NULL_VALUE"
-                    }
-                }
-            });
-        }
-        if let Some(limit) = limit {
-            req["query"]["limit"] = json!(limit);
-        }
-
-        let notes = self.datastore.run_query(&req).await?;
+        let query = query_list("note", Some(("createdAt", true)), limit, include_deleted);
+        let notes = self.datastore.run_query(&query).await?;
         let notes = notes
             .into_iter()
             .map(|(path, v)| Note::from_json_value(v, path.id))
@@ -64,10 +33,7 @@ impl Repository {
     }
 
     pub async fn get_note(&self, id: String) -> Result<Option<Note>> {
-        let notes = self
-            .datastore
-            .run_query(&get_note_query(id.to_string()))
-            .await?;
+        let notes = self.datastore.run_query(&query_by_id("note", &id)).await?;
         let note = notes
             .into_iter()
             .map(|(path, v)| Note::from_json_value(v, path.id))
@@ -114,12 +80,12 @@ impl Repository {
     }
 }
 
-pub fn get_note_query(note_id: String) -> serde_json::Value {
+pub fn query_by_id(kind: &str, id: &str) -> serde_json::Value {
     json!({
         "query": {
             "limit": 1,
             "kind": [{
-                "name": "note"
+                "name": kind
             }],
             "filter": {
                 "propertyFilter": {
@@ -134,8 +100,8 @@ pub fn get_note_query(note_id: String) -> serde_json::Value {
                             },
                             "path": [
                                 {
-                                    "kind": "note",
-                                    "id": note_id
+                                    "kind": kind,
+                                    "id": id
                                 }
                             ]
                         }
@@ -144,4 +110,48 @@ pub fn get_note_query(note_id: String) -> serde_json::Value {
             }
         }
     })
+}
+
+pub fn query_list(
+    kind: &str,
+    order: Option<(&str, bool)>,
+    limit: Option<usize>,
+    include_deleted: bool,
+) -> serde_json::Value {
+    let mut query = json!({
+        "query": {
+            "kind": [
+                {
+                    "name": kind
+                }
+            ]
+        }
+    });
+    if let Some((order_by, desc)) = order {
+        query["query"]["order"] = json!([
+            {
+                "property": {
+                    "name": order_by
+                },
+                "direction": if desc { "DESCENDING" } else { "ASCENDING" }
+            }
+        ]);
+    }
+    if let Some(limit) = limit {
+        query["query"]["limit"] = json!(limit);
+    }
+    if !include_deleted {
+        query["query"]["filter"] = json!({
+            "propertyFilter": {
+                "property": {
+                    "name": "deletedAt"
+                },
+                "op": "EQUAL",
+                "value": {
+                    "nullValue": "NULL_VALUE"
+                }
+            }
+        });
+    }
+    query
 }
