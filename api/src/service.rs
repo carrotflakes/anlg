@@ -3,7 +3,7 @@ use gptcl::model::ChatMessage;
 use serde_json::json;
 
 use crate::{
-    clients::gpt::Gpt,
+    clients::gpt::{new_request, Gpt},
     repository::Repository,
     schema::{Message, Note, Role},
 };
@@ -87,7 +87,7 @@ pub async fn add_companions_comment_to_note(
     );
     log::info!("prompt: {:?}", prompt);
     let res = gpt
-        .call(&[
+        .call(&new_request(vec![
             ChatMessage::from_system(
                 r#"The user post a note as a JSON. You can leave a comment for the user. Please provide the text to be inserted in place of <TEXT> in the JSON.
 Your answer must be in the format {{"text":"<TEXT>"}}.
@@ -95,9 +95,9 @@ Match the language to the user.
 You may also consider context information."#.to_owned(),
             ),
             ChatMessage::from_user(prompt),
-        ])
+        ]))
         .await?;
-    let content_json = res.content.unwrap();
+    let content_json = res.choices[0].message.content.as_ref().unwrap();
     let content = serde_json::from_str::<serde_json::Value>(&content_json)
         .map_err(|e| Error::from(e))
         .and_then(|v| {

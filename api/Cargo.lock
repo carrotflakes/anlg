@@ -921,7 +921,7 @@ checksum = "6fb8d784f27acf97159b40fc4db5ecd8aa23b9ad5ef69cdd136d3bc80665f0c0"
 [[package]]
 name = "gpt-model"
 version = "0.1.0"
-source = "git+https://github.com/carrotflakes/gptcl.git#f31f863f2f42f93ce5b42b4922f71df18e6d7463"
+source = "git+https://github.com/carrotflakes/gptcl.git?rev=9598e1ab0d01d775fa1f6380387dd6ee2d3ff0ae#9598e1ab0d01d775fa1f6380387dd6ee2d3ff0ae"
 dependencies = [
  "serde",
  "serde_json",
@@ -930,7 +930,7 @@ dependencies = [
 [[package]]
 name = "gptcl"
 version = "0.1.0"
-source = "git+https://github.com/carrotflakes/gptcl.git#f31f863f2f42f93ce5b42b4922f71df18e6d7463"
+source = "git+https://github.com/carrotflakes/gptcl.git?rev=9598e1ab0d01d775fa1f6380387dd6ee2d3ff0ae#9598e1ab0d01d775fa1f6380387dd6ee2d3ff0ae"
 dependencies = [
  "gpt-model",
  "serde_json",
@@ -939,7 +939,7 @@ dependencies = [
 [[package]]
 name = "gptcl-hyper"
 version = "0.1.0"
-source = "git+https://github.com/carrotflakes/gptcl.git#f31f863f2f42f93ce5b42b4922f71df18e6d7463"
+source = "git+https://github.com/carrotflakes/gptcl.git?rev=9598e1ab0d01d775fa1f6380387dd6ee2d3ff0ae#9598e1ab0d01d775fa1f6380387dd6ee2d3ff0ae"
 dependencies = [
  "gptcl",
  "hyper",

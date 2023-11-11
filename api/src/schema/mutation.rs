@@ -1,7 +1,11 @@
 use async_graphql::*;
 use gptcl::model::ChatMessage;
 
-use crate::{clients::gpt::Gpt, repository::Repository, service::add_companions_comment_to_note};
+use crate::{
+    clients::gpt::{new_request, Gpt},
+    repository::Repository,
+    service::add_companions_comment_to_note,
+};
 
 use super::{
     note::{Message, Role},
@@ -83,8 +87,10 @@ impl Mutation {
 
     async fn simple_gpt_request(&self, ctx: &Context<'_>, prompt: String) -> Result<String> {
         let gpt = ctx.data::<Gpt>().unwrap();
-        let res = gpt.call(&[ChatMessage::from_user(prompt)]).await?;
-        Ok(res.content.unwrap())
+        let res = gpt
+            .call(&new_request(vec![ChatMessage::from_user(prompt)]))
+            .await?;
+        Ok(res.choices[0].message.content.clone().unwrap())
     }
 }
 
