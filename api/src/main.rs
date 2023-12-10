@@ -49,19 +49,27 @@ async fn main() -> std::io::Result<()> {
             .extension(async_graphql::extensions::Logger)
             .finish();
 
-        App::new()
-            .service(
+        let mut app = App::new();
+        app = if let Some(token) = token.clone() {
+            app.service(
                 web::resource("/graphql")
                     .guard(guard::Post())
-                    .wrap(middlewares::new_auth(token.clone()))
+                    .wrap(middlewares::new_auth(token))
                     .to(GraphQL::new(schema)),
             )
-            .service(
-                web::resource("/graphiql")
-                    .guard(guard::Get())
-                    .to(index_graphiql),
+        } else {
+            app.service(
+                web::resource("/graphql")
+                    .guard(guard::Post())
+                    .to(GraphQL::new(schema)),
             )
-            .wrap(middlewares::new_cors())
+        };
+        app.service(
+            web::resource("/graphiql")
+                .guard(guard::Get())
+                .to(index_graphiql),
+        )
+        .wrap(middlewares::new_cors())
     })
     .bind(std::env::var("ADDRESS").unwrap_or(format!(
         "0.0.0.0:{}",

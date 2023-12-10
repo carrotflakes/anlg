@@ -21,7 +21,7 @@ pub fn new_cors() -> Cors {
 
 /// If `token` is `None`, then no authentication is required.
 pub fn new_auth(
-    token: Option<String>,
+    token: String,
 ) -> actix_web_httpauth::middleware::HttpAuthentication<
     actix_web_httpauth::extractors::bearer::BearerAuth,
     Box<
@@ -50,7 +50,7 @@ pub fn new_auth(
               auth: actix_web_httpauth::extractors::bearer::BearerAuth| {
             let token = token.clone();
             Box::pin(async move {
-                if token.is_none() || token.map(|t| t == auth.token()) == Some(true) {
+                if token == auth.token() {
                     Ok(req)
                 } else {
                     let config = req
