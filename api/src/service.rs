@@ -5,7 +5,7 @@ use serde_json::json;
 use crate::{
     clients::gpt::{new_request, Gpt},
     repository::Repository,
-    schema::{Message, Note, Role},
+    schema::{self, Chat, Message, Note, Role},
 };
 
 pub async fn add_companions_comment_to_note(
@@ -89,8 +89,8 @@ pub async fn add_companions_comment_to_note(
     let res = gpt
         .call(&new_request(vec![
             ChatMessage::from_system(
-                r#"The user post a note as a JSON. You can leave a comment for the user. Please provide the text to be inserted in place of <TEXT> in the JSON.
-Your answer must be in the format {{"text":"<TEXT>"}}.
+                r#"The user post a note. You can leave a comment for the user. Please provide the text to be inserted in place of <TEXT> in the JSON.
+Your answer must be in the format {"text":"<TEXT>"}.
 Match the language to the user.
 You may also consider context information."#.to_owned(),
             ),
@@ -117,4 +117,32 @@ You may also consider context information."#.to_owned(),
         created_at: chrono::Utc::now(),
     });
     Ok(note)
+}
+
+pub async fn add_companions_comment_to_chat(gpt: &Gpt, mut chat: Chat) -> Result<Chat> {
+    let res = gpt
+        .call(&new_request(vec![ChatMessage::from_user(
+            chat.messages.last().unwrap().content.clone(),
+        )]))
+        .await?;
+    let content_json = res.choices[0].message.content.as_ref().unwrap();
+    let content = serde_json::from_str::<serde_json::Value>(&content_json)
+        .map_err(|e| Error::from(e))
+        .and_then(|v| {
+            v.get("text")
+                .ok_or(Error::new("Unexpected response"))
+                .and_then(|v| {
+                    v.as_str()
+                        .map(|s| s.to_owned())
+                        .ok_or(Error::new("Unexpected response"))
+                })
+        })
+        .map_err(|e| Error::from(format!("Invalid json: {:?}: {:?}", content_json, e)))?;
+    log::info!("GPT response: {:?}", content);
+    chat.messages.push(schema::ChatMessage {
+        role: Role::Companion,
+        content,
+        created_at: chrono::Utc::now(),
+    });
+    Ok(chat)
 }

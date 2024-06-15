@@ -15,5 +15,6 @@ pub fn new_request(messages: Vec<ChatMessage>) -> ChatRequest {
     let mut req = ChatRequest::from_model(gptcl::MODEL_GPT_3_5_TURBO.to_string());
     req.temperature = Some(0.0);
     req.messages = messages;
+    req.response_format = Some(gptcl::model::ResponseFormat::Json);
     req
 }

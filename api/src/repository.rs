@@ -1,21 +1,16 @@
-use std::sync::Arc;
+use firestore::{path, FirestoreDb, FirestoreQueryDirection};
 
-use serde_json::json;
-
-use crate::{
-    clients::gcdatastore::{Client as DSClient, Commit},
-    schema::Note,
-};
+use crate::schema::{Chat, Note};
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
 
 pub struct Repository {
-    datastore: Arc<DSClient>,
+    db: FirestoreDb,
 }
 
 impl Repository {
-    pub fn new(datastore: Arc<DSClient>) -> Self {
-        Self { datastore }
+    pub fn new(db: FirestoreDb) -> Self {
+        Self { db }
     }
 
     pub async fn get_notes(
@@ -23,135 +18,112 @@ impl Repository {
         include_deleted: bool,
         limit: Option<usize>,
     ) -> Result<Vec<Note>> {
-        let query = query_list("note", Some(("createdAt", true)), limit, include_deleted);
-        let notes = self.datastore.run_query(&query).await?;
-        let notes = notes
-            .into_iter()
-            .map(|(path, v)| Note::from_json_value(v, path.id))
-            .collect();
+        let mut q = self.db.fluent().select().from("notes");
+        if !include_deleted {
+            q = q.filter(|q| q.field(path!(Note::deleted_at)).is_null());
+        }
+        if let Some(limit) = limit {
+            q = q.limit(limit as u32);
+        }
+        let notes: Vec<Note> = q
+            .order_by([(path!(Note::created_at), FirestoreQueryDirection::Descending)])
+            .obj()
+            .query()
+            .await?;
         Ok(notes)
     }
 
     pub async fn get_note(&self, id: String) -> Result<Option<Note>> {
-        let notes = self.datastore.run_query(&query_by_id("note", &id)).await?;
-        let note = notes
-            .into_iter()
-            .map(|(path, v)| Note::from_json_value(v, path.id))
-            .next();
-        Ok(note)
+        Ok(self
+            .db
+            .fluent()
+            .select()
+            .by_id_in("notes")
+            .obj()
+            .one(&id)
+            .await?)
     }
 
     pub async fn insert_note(&self, note: &mut Note) -> Result<()> {
-        let properties = note.to_json_value();
-        let res = self
-            .datastore
-            .commit(Commit::Insert {
-                kind: "note".to_string(),
-                properties,
-            })
+        let res: Note = self
+            .db
+            .fluent()
+            .insert()
+            .into("notes")
+            .generate_document_id()
+            .object(note)
+            .execute()
             .await?;
-        let note_id = res.mutation_results[0].key.as_ref().unwrap().path[0]
-            .id
-            .clone();
-        note.id = async_graphql::ID::from(&note_id);
-        let properties = note.to_json_value();
-        let _ = self
-            .datastore
-            .commit(Commit::Update {
-                kind: "note".to_string(),
-                id: note_id.clone(),
-                properties,
-            })
-            .await;
+        note.id = res.id;
         Ok(())
     }
 
     pub async fn update_note(&self, note: &Note) -> Result<()> {
-        let properties = note.to_json_value();
-        let _ = self
-            .datastore
-            .commit(Commit::Update {
-                kind: "note".to_string(),
-                id: note.id.to_string(),
-                properties,
-            })
-            .await;
+        self.db
+            .fluent()
+            .update()
+            .in_col("notes")
+            .document_id(&note.id.clone().unwrap().to_string())
+            .object(note)
+            .execute()
+            .await?;
         Ok(())
     }
-}
 
-pub fn query_by_id(kind: &str, id: &str) -> serde_json::Value {
-    json!({
-        "query": {
-            "limit": 1,
-            "kind": [{
-                "name": kind
-            }],
-            "filter": {
-                "propertyFilter": {
-                    "property": {
-                        "name": "__key__"
-                    },
-                    "op": "EQUAL",
-                    "value": {
-                        "keyValue": {
-                            "partitionId": {
-                                "namespaceId": ""
-                            },
-                            "path": [
-                                {
-                                    "kind": kind,
-                                    "id": id
-                                }
-                            ]
-                        }
-                    }
-                }
-            }
+    pub async fn get_chats(
+        &self,
+        include_deleted: bool,
+        limit: Option<usize>,
+    ) -> Result<Vec<Chat>> {
+        let mut q = self.db.fluent().select().from("chats");
+        if !include_deleted {
+            q = q.filter(|q| q.field(path!(Chat::deleted_at)).is_null());
         }
-    })
-}
+        if let Some(limit) = limit {
+            q = q.limit(limit as u32);
+        }
+        Ok(
+            q.order_by([(path!(Chat::created_at), FirestoreQueryDirection::Descending)])
+                .obj()
+                .query()
+                .await?,
+        )
+    }
 
-pub fn query_list(
-    kind: &str,
-    order: Option<(&str, bool)>,
-    limit: Option<usize>,
-    include_deleted: bool,
-) -> serde_json::Value {
-    let mut query = json!({
-        "query": {
-            "kind": [
-                {
-                    "name": kind
-                }
-            ]
-        }
-    });
-    if let Some((order_by, desc)) = order {
-        query["query"]["order"] = json!([
-            {
-                "property": {
-                    "name": order_by
-                },
-                "direction": if desc { "DESCENDING" } else { "ASCENDING" }
-            }
-        ]);
+    pub async fn get_chat(&self, id: String) -> Result<Option<Chat>> {
+        Ok(self
+            .db
+            .fluent()
+            .select()
+            .by_id_in("chats")
+            .obj()
+            .one(&id)
+            .await?)
     }
-    if let Some(limit) = limit {
-        query["query"]["limit"] = json!(limit);
+
+    pub async fn insert_chat(&self, chat: &mut Chat) -> Result<()> {
+        let res: Chat = self
+            .db
+            .fluent()
+            .insert()
+            .into("chats")
+            .generate_document_id()
+            .object(chat)
+            .execute()
+            .await?;
+        chat.id = res.id;
+        Ok(())
     }
-    if !include_deleted {
-        query["query"]["filter"] = json!({
-            "propertyFilter": {
-                "property": {
-                    "name": "deletedAt"
-                },
-                "op": "EQUAL",
-                "value": {
-                    "nullValue": "NULL_VALUE"
-                }
-            }
-        });
+
+    pub async fn update_chat(&self, chat: &Chat) -> Result<()> {
+        self.db
+            .fluent()
+            .update()
+            .in_col("chats")
+            .document_id(&chat.id.clone().unwrap().to_string())
+            .object(chat)
+            .execute()
+            .await?;
+        Ok(())
     }
-    query
 }

@@ -1,4 +1,3 @@
-version: "3.8"
 services:
   api:
     build:
@@ -9,24 +8,26 @@ services:
     environment:
       - ENV=dev
       - RUST_LOG=info
-      - GCP_DATASTORE_URL=http://datastore:8080
-      - GCP_PROJECT_ID=anlg
+      - GCP_FIRESTORE_URL=http://firestore:8080
+      - GCP_PROJECT_ID=anlg-399912
+      - FIRESTORE_EMULATOR_HOST=firestore:8080
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/gcloud/application_default_credentials.json
       - ADDRESS=0.0.0.0:8000
-      - ACCESS_TOKEN=ACCESS_TOKEN
+      #- ACCESS_TOKEN=ACCESS_TOKEN
       - OPENAI_API_KEY
     volumes:
       - ./api/src:/app/src
+      - ./firestore/gcloud:/app/gcloud
     depends_on:
-      - datastore
-  datastore:
+      - firestore
+  firestore:
     build:
-      context: ./datastore
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./firestore/Dockerfile
     ports:
-      - "8010:8080"
-    environment:
-      - PROJECT_ID=anlg
-      - HOST_PORT=0.0.0.0:8080
+      - "8081:8080"
+    volumes:
+      - ./firestore/gcloud:/root/.config/gcloud
   front:
     build:
       context: ./front

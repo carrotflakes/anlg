@@ -1,4 +1,4 @@
-FROM rust:1.72 as chef
+FROM rust:1.79 as chef
 WORKDIR /app
 
 RUN cargo install cargo-chef cargo-watch
@@ -13,4 +13,4 @@ RUN cargo chef cook --release --recipe-path recipe.json
 
 COPY . .
 
-CMD ["cargo", "watch", "-x", "run"]
+CMD ["cargo", "watch", "-x", "run", "-w", "src"]

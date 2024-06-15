@@ -4,12 +4,12 @@ use gptcl::model::ChatMessage;
 use crate::{
     clients::gpt::{new_request, Gpt},
     repository::Repository,
-    service::add_companions_comment_to_note,
+    service::{add_companions_comment_to_chat, add_companions_comment_to_note},
 };
 
 use super::{
     note::{Message, Role},
-    Note,
+    Chat, Note,
 };
 
 pub struct Mutation;
@@ -21,7 +21,7 @@ impl Mutation {
         let gpt = ctx.data::<Gpt>().unwrap();
         let created_at = chrono::Utc::now();
         let mut note = Note {
-            id: "".into(),
+            id: None,
             content: content.clone(),
             messages: vec![],
             created_at,
@@ -83,6 +83,26 @@ impl Mutation {
         let note = add_companions_comment_to_note(repository, gpt, note).await?;
         repository.update_note(&note).await?;
         Ok(note)
+    }
+
+    async fn new_chat(&self, ctx: &Context<'_>, content: String) -> Result<Chat> {
+        let repository = ctx.data::<Repository>().unwrap();
+        let gpt = ctx.data::<Gpt>().unwrap();
+        let created_at = chrono::Utc::now();
+        let mut chat = Chat {
+            id: None,
+            messages: vec![super::ChatMessage {
+                role: Role::User,
+                content,
+                created_at,
+            }],
+            created_at,
+            deleted_at: None,
+        };
+        repository.insert_chat(&mut chat).await?;
+        let chat = add_companions_comment_to_chat(gpt, chat).await?;
+        repository.update_chat(&chat).await?;
+        Ok(chat)
     }
 
     async fn simple_gpt_request(&self, ctx: &Context<'_>, prompt: String) -> Result<String> {

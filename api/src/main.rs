@@ -1,13 +1,9 @@
-use std::sync::Arc;
-
 use actix_web::{guard, web, App, HttpResponse, HttpServer, Result};
 use async_graphql::{http::GraphiQLSource, EmptySubscription, Schema};
 use async_graphql_actix_web::GraphQL;
 
-use anlg_api::{
-    clients::{gcdatastore, gpt},
-    middlewares, schema,
-};
+use anlg_api::{clients::gpt, middlewares, schema};
+use firestore::{FirestoreDb, FirestoreDbOptions};
 
 async fn index_graphiql() -> Result<HttpResponse> {
     Ok(HttpResponse::Ok()
@@ -23,23 +19,16 @@ async fn main() -> std::io::Result<()> {
     log::info!("ENV: {}", env);
     log::info!("GraphiQL IDE: http://localhost:8000/graphql");
 
-    let datastore_url =
-        std::env::var("GCP_DATASTORE_URL").unwrap_or("https://datastore.googleapis.com".to_owned());
     let project_id = std::env::var("GCP_PROJECT_ID").expect("GCP_PROJECT_ID is not set");
     let openai_api_key = std::env::var("OPENAI_API_KEY").expect("OPENAI_API_KEY is not set");
     let token = std::env::var("ACCESS_TOKEN").ok();
 
+    let mut db_opt = FirestoreDbOptions::new(project_id.to_string());
+    db_opt = db_opt.with_database_id("prd-anlg".to_string());
+    let db = FirestoreDb::with_options(db_opt).await.unwrap();
+
     HttpServer::new(move || {
-        let token_getter = if env == "dev" {
-            gcdatastore::TokenGetter::Dummy
-        } else {
-            gcdatastore::TokenGetter::ACD
-            // gcdatastore::TokenGetter::ServiceAccount(gcp::TokenGetter::from_credentials_json(&cred))
-        };
-        let datastore =
-            gcdatastore::Client::new(datastore_url.clone(), project_id.clone(), token_getter);
-        let datastore = Arc::new(datastore);
-        let repository = anlg_api::repository::Repository::new(datastore.clone());
+        let repository = anlg_api::repository::Repository::new(db.clone());
 
         let gpt = gpt::new_gpt(openai_api_key.clone());
 
