@@ -22,6 +22,5 @@ log = "0.4"
 env_logger = "0.10"
 gptcl = { git = "https://github.com/carrotflakes/gptcl.git", rev = "9598e1ab0d01d775fa1f6380387dd6ee2d3ff0ae" }
 gptcl-hyper = { git = "https://github.com/carrotflakes/gptcl.git", rev = "9598e1ab0d01d775fa1f6380387dd6ee2d3ff0ae" }
-#datastore = { path = "./datastore" }
 firestore = "0.42"
 futures = "0.3"
