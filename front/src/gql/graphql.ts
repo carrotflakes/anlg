@@ -22,6 +22,21 @@ export type Scalars = {
   DateTime: { input: string; output: string; }
 };
 
+export type Chat = {
+  __typename?: 'Chat';
+  createdAt: Scalars['DateTime']['output'];
+  deletedAt?: Maybe<Scalars['DateTime']['output']>;
+  id: Scalars['ID']['output'];
+  messages: Array<ChatMessage>;
+};
+
+export type ChatMessage = {
+  __typename?: 'ChatMessage';
+  content: Scalars['String']['output'];
+  createdAt: Scalars['DateTime']['output'];
+  role: Role;
+};
+
 export type Message = {
   __typename?: 'Message';
   content: Scalars['String']['output'];
@@ -84,6 +99,8 @@ export type Query = {
   __typename?: 'Query';
   /** Returns the sum of a and b */
   add: Scalars['Int']['output'];
+  chat?: Maybe<Chat>;
+  chats: Array<Chat>;
   note?: Maybe<Note>;
   notes: Array<Note>;
 };
@@ -92,6 +109,17 @@ export type Query = {
 export type QueryAddArgs = {
   a: Scalars['Int']['input'];
   b: Scalars['Int']['input'];
+};
+
+
+export type QueryChatArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type QueryChatsArgs = {
+  includeDeleted: Scalars['Boolean']['input'];
+  limit?: InputMaybe<Scalars['Int']['input']>;
 };
 
 
@@ -113,6 +141,11 @@ export type UpdateNoteInput = {
   content: Scalars['String']['input'];
   id: Scalars['ID']['input'];
 };
+
+export type ChatsQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type ChatsQuery = { __typename?: 'Query', chats: Array<{ __typename?: 'Chat', id: string, createdAt: string }> };
 
 export type NotesQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -156,6 +189,7 @@ export type PostMutationVariables = Exact<{
 export type PostMutation = { __typename?: 'Mutation', post: { __typename?: 'Note', id: string } };
 
 
+export const ChatsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"chats"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"chats"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"includeDeleted"},"value":{"kind":"BooleanValue","value":false}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}}]}}]}}]} as unknown as DocumentNode<ChatsQuery, ChatsQueryVariables>;
 export const NotesDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"notes"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"notes"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"includeDeleted"},"value":{"kind":"BooleanValue","value":false}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"content"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}},{"kind":"Field","name":{"kind":"Name","value":"deletedAt"}}]}}]}}]} as unknown as DocumentNode<NotesQuery, NotesQueryVariables>;
 export const DeleteDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"delete"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"deleteNote"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"noteId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<DeleteMutation, DeleteMutationVariables>;
 export const NoteDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"note"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"note"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"content"}},{"kind":"Field","name":{"kind":"Name","value":"messages"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"role"}},{"kind":"Field","name":{"kind":"Name","value":"content"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}}]}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}},{"kind":"Field","name":{"kind":"Name","value":"deletedAt"}}]}}]}}]} as unknown as DocumentNode<NoteQuery, NoteQueryVariables>;

@@ -1,16 +1,17 @@
 import { useCallback, useState } from "react";
 import { useMutation, useQuery } from "urql";
-import { graphql } from "../../gql";
+import { graphql } from "../gql";
 
-import { setNote } from "../../hashChanger";
-import { Dialog } from "../Dialog";
-import styles from "./index.module.scss";
+import { setNote } from "../hashChanger";
+import { Dialog } from "./Dialog";
+
+const styleTime = " text-sm opacity-80";
 
 export function Notes({ noteId }: { noteId: string | null }) {
   const [notesRes] = useQuery({ query: notesQuery });
 
   return (
-    <div className={styles.Notes}>
+    <div className="flex gap-4 flex-wrap items-start">
       {notesRes.error && "The server is unavailable."}
       {notesRes.data?.notes.map(
         (note: {
@@ -22,15 +23,15 @@ export function Notes({ noteId }: { noteId: string | null }) {
         }) =>
           note.deletedAt ? null : (
             <div
-              className={styles.card}
+              className="min-w-[10rem] min-h-10 max-w-[20rem] px-2 py-4 bg-white rounded-lg cursor-pointer"
               key={note.id}
               onClick={(e) => {
                 setNote(note.id);
                 e.stopPropagation();
               }}
             >
-              <pre>{note.content}</pre>
-              <div className={styles.time}>
+              <div className="whitespace-pre-wrap break-words">{note.content}</div>
+              <div className={styleTime}>
                 {relativeTimeFormat(new Date(note.updatedAt))}
               </div>
             </div>
@@ -102,36 +103,40 @@ function Note({
 
   if (!('content' in note))
     return (
-      <div className={styles.Note}>
+      <div className="max-w-[80vw]">
         <pre>loading...</pre>
       </div>
     );
 
   return (
-    <div className={styles.Note}>
-      <pre>{note.content}</pre>
-      <span className={styles.time}>
-        {formatDate(new Date(note.createdAt))}
-      </span>
-      <button onClick={deleteNote} disabled={isProcessing}>Delete</button>
-      <div className={styles.separator}></div>
+    <div className="max-w-[80vw]">
+      <pre className="whitespace-pre-wrap break-words">{note.content}</pre>
+      <div className="flex gap-2">
+        <span className={styleTime}>
+          {formatDate(new Date(note.createdAt))}
+        </span>
+        <button onClick={deleteNote} disabled={isProcessing}>Delete</button>
+      </div>
+      <div className="border-t my-1"></div>
       {note.messages.map((m) => (
-        <div className={styles.Message} key={m.createdAt}>
-          <header>
-            <span className={styles.name} style={{ color: m.role === "USER" ? "#666" : "#55f" }}>
+        <div className="my-2" key={m.createdAt}>
+          <header className="flex items-center gap-2">
+            <span style={{ color: m.role === "USER" ? "#666" : "#55f" }}>
               {m.role === "USER" ? "you" : "bot"}
             </span>
-            <span className={styles.time}>
+            <span className={styleTime}>
               {relativeTimeFormat(new Date(m.createdAt))}
             </span>
           </header>
-          <pre>{m.content}</pre>
+          <pre className="whitespace-pre-wrap break-words">{m.content}</pre>
         </div>
       ))}
-      <div>
-        <textarea className={styles.messageForm} value={text} onChange={(e) => setText(e.target.value)} />
-        <button onClick={addComment} disabled={isProcessing}>Post</button>
-        <button onClick={requestCompanionsComment} disabled={isProcessing}>Request</button>
+      <div className="flex gap-2">
+        <textarea className="flex-1 border rounded p-2" value={text} onChange={(e) => setText(e.target.value)} />
+        <div className="flex flex-col gap-2">
+          <button onClick={addComment} disabled={isProcessing}>Post</button>
+          <button onClick={requestCompanionsComment} disabled={isProcessing}>Request</button>
+        </div>
       </div>
     </div>
   );

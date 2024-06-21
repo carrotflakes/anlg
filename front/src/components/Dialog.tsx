@@ -1,7 +1,5 @@
 import { useEffect, useRef } from "react";
 
-import styles from "./index.module.scss";
-
 export function Dialog({
   children,
   onClose,
@@ -26,7 +24,7 @@ export function Dialog({
   };
 
   return (
-    <dialog className={styles.Dialog} onClick={onClick} ref={ref}>
+    <dialog className={"min-w-[10rem] min-h-10 rounded-lg bg-white p-4"} onClick={onClick} ref={ref}>
       {children}
     </dialog>
   );
