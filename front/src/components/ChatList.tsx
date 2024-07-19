@@ -19,6 +19,11 @@ const query = graphql(`
     chats(includeDeleted: false) {
       id
       createdAt
+      messages {
+        role
+        content
+        createdAt
+      }
     }
   }
 `);

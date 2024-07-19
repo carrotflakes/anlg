@@ -121,7 +121,12 @@ You may also consider context information."#.to_owned(),
 
 pub async fn add_companions_comment_to_chat(gpt: &Gpt, mut chat: Chat) -> Result<Chat> {
     let res = gpt
-        .call(&new_request(vec![ChatMessage::from_user(
+        .call(&new_request(vec![
+            ChatMessage::from_system(
+                r#"Your answer must be in the JSON format {"text":"<TEXT>"}.
+Match the language to the user."#.to_owned(),
+            ),
+            ChatMessage::from_user(
             chat.messages.last().unwrap().content.clone(),
         )]))
         .await?;

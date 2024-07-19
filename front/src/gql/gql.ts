@@ -13,13 +13,14 @@ import { TypedDocumentNode as DocumentNode } from '@graphql-typed-document-node/
  * Therefore it is highly recommended to use the babel or swc plugin for production.
  */
 const documents = {
-    "\n  query chats {\n    chats(includeDeleted: false) {\n      id\n      createdAt\n    }\n  }\n": types.ChatsDocument,
+    "\n  query chats {\n    chats(includeDeleted: false) {\n      id\n      createdAt\n      messages {\n        role\n        content\n        createdAt\n      }\n    }\n  }\n": types.ChatsDocument,
     "\n  query notes {\n    notes(includeDeleted: false) {\n      id\n      content\n      createdAt\n      updatedAt\n      deletedAt\n    }\n  }\n": types.NotesDocument,
     "\n  mutation delete($id: ID!) {\n    deleteNote(noteId: $id) {\n      id\n    }\n  }\n": types.DeleteDocument,
     "\n  query note($id: ID!) {\n    note(id: $id) {\n      id\n      content\n      messages {\n        role\n        content\n        createdAt\n      }\n      createdAt\n      updatedAt\n      deletedAt\n    }\n  }\n": types.NoteDocument,
     "\n  mutation requestCompanionsComment($noteId: ID!) {\n    requestCompanionsComment(noteId: $noteId) {\n      id\n    }\n  }\n": types.RequestCompanionsCommentDocument,
     "\n  mutation addComment($noteId: ID!, $content: String!) {\n    addComment(noteId: $noteId, content: $content) {\n      id\n    }\n  }\n": types.AddCommentDocument,
     "\n  mutation post($content: String!) {\n    post(content: $content) {\n      id\n    }\n  }\n": types.PostDocument,
+    "\n  mutation newChat($content: String!) {\n    newChat(content: $content) {\n      id\n    }\n  }\n": types.NewChatDocument,
 };
 
 /**
@@ -39,7 +40,7 @@ export function graphql(source: string): unknown;
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
-export function graphql(source: "\n  query chats {\n    chats(includeDeleted: false) {\n      id\n      createdAt\n    }\n  }\n"): (typeof documents)["\n  query chats {\n    chats(includeDeleted: false) {\n      id\n      createdAt\n    }\n  }\n"];
+export function graphql(source: "\n  query chats {\n    chats(includeDeleted: false) {\n      id\n      createdAt\n      messages {\n        role\n        content\n        createdAt\n      }\n    }\n  }\n"): (typeof documents)["\n  query chats {\n    chats(includeDeleted: false) {\n      id\n      createdAt\n      messages {\n        role\n        content\n        createdAt\n      }\n    }\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
@@ -64,6 +65,10 @@ export function graphql(source: "\n  mutation addComment($noteId: ID!, $content:
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function graphql(source: "\n  mutation post($content: String!) {\n    post(content: $content) {\n      id\n    }\n  }\n"): (typeof documents)["\n  mutation post($content: String!) {\n    post(content: $content) {\n      id\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation newChat($content: String!) {\n    newChat(content: $content) {\n      id\n    }\n  }\n"): (typeof documents)["\n  mutation newChat($content: String!) {\n    newChat(content: $content) {\n      id\n    }\n  }\n"];
 
 export function graphql(source: string) {
   return (documents as any)[source] ?? {};

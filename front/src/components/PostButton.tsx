@@ -9,23 +9,38 @@ export function PostButton() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [showPostForm, setShowPostForm] = useState(false);
   const [, post] = useMutation(postMutation);
+  const [, newChat] = useMutation(newChatMutation);
   const [text, setText] = useState("");
   const [postType, setPostType] = useState<"note" | "chat">("note");
 
   const submit = async () => {
     if (!text)
       return;
-    setIsProcessing(true);
-    const res = await post({ content: text });
-    if (res.error || !res.data?.post.id) {
-      alert("Failed to post.");
-      return
-    }
 
-    setText("");
-    setShowPostForm(false);
-    setIsProcessing(false);
-    setNote(res.data.post.id);
+    if (postType === "note") {
+      setIsProcessing(true);
+      const res = await post({ content: text });
+      if (res.error || !res.data?.post.id) {
+        alert("Failed to post.");
+        return
+      }
+
+      setText("");
+      setShowPostForm(false);
+      setIsProcessing(false);
+      setNote(res.data.post.id);
+    } else {
+      setIsProcessing(true);
+      const res = await newChat({ content: text });
+      if (res.error || !res.data?.newChat.id) {
+        alert("Failed to post.");
+        return
+      }
+
+      setText("");
+      setShowPostForm(false);
+      setIsProcessing(false);
+    }
   };
 
   return (
@@ -51,6 +66,14 @@ export function PostButton() {
 const postMutation = graphql(`
   mutation post($content: String!) {
     post(content: $content) {
+      id
+    }
+  }
+`);
+
+const newChatMutation = graphql(`
+  mutation newChat($content: String!) {
+    newChat(content: $content) {
       id
     }
   }
