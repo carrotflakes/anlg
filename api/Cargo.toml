@@ -20,7 +20,7 @@ rustls = "0.21"
 rustls-pemfile = "1.0"
 log = "0.4"
 env_logger = "0.10"
-gptcl = { git = "https://github.com/carrotflakes/gptcl.git", rev = "9598e1ab0d01d775fa1f6380387dd6ee2d3ff0ae" }
-gptcl-hyper = { git = "https://github.com/carrotflakes/gptcl.git", rev = "9598e1ab0d01d775fa1f6380387dd6ee2d3ff0ae" }
+gptcl = { git = "https://github.com/carrotflakes/gptcl.git", rev = "46f4cf081188d8caf00ab03bf0c928918e359d0c" }
+gptcl-hyper = { git = "https://github.com/carrotflakes/gptcl.git", rev = "46f4cf081188d8caf00ab03bf0c928918e359d0c" }
 firestore = "0.42"
 futures = "0.3"
