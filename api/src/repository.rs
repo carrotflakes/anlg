@@ -1,6 +1,6 @@
 use firestore::{path, FirestoreDb, FirestoreQueryDirection};
 
-use crate::schema::{Chat, Note};
+use crate::schema::{Chat, Note, UserLog};
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
 
@@ -122,6 +122,38 @@ impl Repository {
             .in_col("chats")
             .document_id(&chat.id.clone().unwrap().to_string())
             .object(chat)
+            .execute()
+            .await?;
+        Ok(())
+    }
+
+    pub async fn get_user_logs(
+        &self,
+        before: Option<chrono::DateTime<chrono::Utc>>,
+        limit: usize,
+    ) -> Result<Vec<UserLog>> {
+        let mut q = self.db.fluent().select().from("user_logs");
+        if let Some(before) = before {
+            q = q.filter(|q| q.field(path!(UserLog::datetime)).less_than(before));
+        }
+        Ok(q.order_by([(
+            path!(UserLog::datetime),
+            FirestoreQueryDirection::Descending,
+        )])
+        .limit(limit as u32)
+        .obj()
+        .query()
+        .await?)
+    }
+
+    pub async fn insert_user_log(&self, log: &UserLog) -> Result<()> {
+        let _res: UserLog = self
+            .db
+            .fluent()
+            .insert()
+            .into("user_logs")
+            .generate_document_id()
+            .object(log)
             .execute()
             .await?;
         Ok(())

@@ -9,7 +9,7 @@ use crate::{
 
 use super::{
     note::{Message, Role},
-    Chat, Note,
+    Chat, Note, UserLog,
 };
 
 pub struct Mutation;
@@ -103,6 +103,17 @@ impl Mutation {
         let chat = add_companions_comment_to_chat(gpt, chat).await?;
         repository.update_chat(&chat).await?;
         Ok(chat)
+    }
+
+    async fn push_user_log(&self, ctx: &Context<'_>, message: String) -> Result<UserLog> {
+        let repository = ctx.data::<Repository>().unwrap();
+        let user_log = UserLog {
+            r#type: "user".to_string(),
+            message,
+            datetime: chrono::Utc::now(),
+        };
+        repository.insert_user_log(&user_log).await?;
+        Ok(user_log)
     }
 
     async fn simple_gpt_request(&self, ctx: &Context<'_>, prompt: String) -> Result<String> {

@@ -1,8 +1,9 @@
 use async_graphql::*;
+use chrono::DateTime;
 
 use crate::repository::Repository;
 
-use super::{Note, Chat};
+use super::{Chat, Note, UserLog};
 
 pub struct Query;
 
@@ -46,6 +47,19 @@ impl Query {
         let repository = ctx.data::<Repository>().unwrap();
         repository
             .get_chat(id.to_string())
+            .await
+            .map_err(Error::from)
+    }
+
+    async fn user_logs(
+        &self,
+        ctx: &Context<'_>,
+        before: Option<DateTime<chrono::Utc>>,
+        limit: Option<usize>,
+    ) -> Result<Vec<UserLog>> {
+        let repository = ctx.data::<Repository>().unwrap();
+        repository
+            .get_user_logs(before, limit.unwrap_or(100))
             .await
             .map_err(Error::from)
     }
