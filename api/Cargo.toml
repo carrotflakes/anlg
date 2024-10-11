@@ -6,21 +6,21 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-async-graphql = { version = "6.0.6", features = ["chrono", "log"] }
-async-graphql-actix-web = "6.0.6"
-actix-web = { version = "4.4.0", default-features = false, features = ["http2", "macros"] }
-actix-cors = "0.6.4"
+async-graphql = { version = "7.0", features = ["chrono", "log"] }
+async-graphql-actix-web = "7.0"
+actix-web = { version = "4.9", default-features = false, features = ["http2", "macros"] }
+actix-cors = "0.7"
 actix-web-httpauth = "0.8"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = { version = "1.0", features = ["preserve_order"] }
 chrono = { version = "0.4", features = ["serde"] }
-reqwest = { version = "0.11", default-features = false, features = ["rustls-tls", "json"] }
-base64 = "0.21"
-rustls = "0.21"
-rustls-pemfile = "1.0"
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "json"] }
+base64 = "0.22"
+rustls = "0.23"
+rustls-pemfile = "2.2"
 log = "0.4"
-env_logger = "0.10"
+env_logger = "0.11"
 gptcl = { git = "https://github.com/carrotflakes/gptcl.git", rev = "46f4cf081188d8caf00ab03bf0c928918e359d0c" }
 gptcl-hyper = { git = "https://github.com/carrotflakes/gptcl.git", rev = "46f4cf081188d8caf00ab03bf0c928918e359d0c" }
-firestore = "0.42"
+firestore = "0.43"
 futures = "0.3"
