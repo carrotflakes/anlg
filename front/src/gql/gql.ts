@@ -13,7 +13,8 @@ import { TypedDocumentNode as DocumentNode } from '@graphql-typed-document-node/
  * Therefore it is highly recommended to use the babel or swc plugin for production.
  */
 const documents = {
-    "\n  query chats {\n    chats(includeDeleted: false) {\n      id\n      createdAt\n      messages {\n        role\n        content\n        createdAt\n      }\n    }\n  }\n": types.ChatsDocument,
+    "\n  query chats {\n    chats(includeDeleted: false) {\n      id\n      createdAt\n    }\n  }\n": types.ChatsDocument,
+    "\n  query chat($id: ID!) {\n    chat(id: $id) {\n      id\n      createdAt\n      messages {\n        role\n        content\n        createdAt\n      }\n    }\n  }\n": types.ChatDocument,
     "\n  query notes {\n    notes(includeDeleted: false) {\n      id\n      content\n      createdAt\n      updatedAt\n      deletedAt\n    }\n  }\n": types.NotesDocument,
     "\n  mutation delete($id: ID!) {\n    deleteNote(noteId: $id) {\n      id\n    }\n  }\n": types.DeleteDocument,
     "\n  query note($id: ID!) {\n    note(id: $id) {\n      id\n      content\n      messages {\n        role\n        content\n        createdAt\n      }\n      createdAt\n      updatedAt\n      deletedAt\n    }\n  }\n": types.NoteDocument,
@@ -40,7 +41,11 @@ export function graphql(source: string): unknown;
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
-export function graphql(source: "\n  query chats {\n    chats(includeDeleted: false) {\n      id\n      createdAt\n      messages {\n        role\n        content\n        createdAt\n      }\n    }\n  }\n"): (typeof documents)["\n  query chats {\n    chats(includeDeleted: false) {\n      id\n      createdAt\n      messages {\n        role\n        content\n        createdAt\n      }\n    }\n  }\n"];
+export function graphql(source: "\n  query chats {\n    chats(includeDeleted: false) {\n      id\n      createdAt\n    }\n  }\n"): (typeof documents)["\n  query chats {\n    chats(includeDeleted: false) {\n      id\n      createdAt\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  query chat($id: ID!) {\n    chat(id: $id) {\n      id\n      createdAt\n      messages {\n        role\n        content\n        createdAt\n      }\n    }\n  }\n"): (typeof documents)["\n  query chat($id: ID!) {\n    chat(id: $id) {\n      id\n      createdAt\n      messages {\n        role\n        content\n        createdAt\n      }\n    }\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
