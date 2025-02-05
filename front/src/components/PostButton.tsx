@@ -4,6 +4,7 @@ import { useMutation } from "urql";
 import { graphql } from "../gql";
 import { Dialog } from "./Dialog";
 import { setNote } from "../hashChanger";
+import { Button } from "./Button";
 
 export function PostButton() {
   const [isProcessing, setIsProcessing] = useState(false);
@@ -45,17 +46,17 @@ export function PostButton() {
 
   return (
     <>
-      <button onClick={() => setShowPostForm(true)}>+</button>
+      <Button onClick={() => setShowPostForm(true)}>+</Button>
 
       {showPostForm && (
         <Dialog onClose={() => setShowPostForm(false)}>
           <div className="flex flex-col items-center gap-4">
             <div className="flex gap-2">
-              <button className="" data-active={postType === "note"} onClick={() => setPostType("note")}>Note</button>
-              <button className="" data-active={postType === "chat"} onClick={() => setPostType("chat")}>Chat</button>
+              <Button onClick={() => setPostType("note")} selected={postType === "note"}>Note</Button>
+              <Button onClick={() => setPostType("chat")} selected={postType === "chat"}>Chat</Button>
             </div>
-            <textarea className="w-96 h-40 border rounded p-2" value={text} onChange={(e) => setText(e.target.value)} />
-            <button onClick={submit} disabled={isProcessing}>Post</button>
+            <textarea className="w-96 h-40 border rounded-sm p-2" value={text} onChange={(e) => setText(e.target.value)} />
+            <Button onClick={submit} disabled={isProcessing}>Post</Button>
           </div>
         </Dialog>
       )}

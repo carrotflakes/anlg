@@ -24,7 +24,13 @@ export function Dialog({
   };
 
   return (
-    <dialog className={"min-w-[10rem] min-h-10 rounded-lg bg-white p-4"} onClick={onClick} ref={ref}>
+    <dialog
+      className={
+        "min-w-[10rem] min-h-10 rounded-lg bg-white p-4 fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"
+      }
+      onClick={onClick}
+      ref={ref}
+    >
       {children}
     </dialog>
   );

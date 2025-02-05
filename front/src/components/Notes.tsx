@@ -4,6 +4,7 @@ import { graphql } from "../gql";
 
 import { setNote } from "../hashChanger";
 import { Dialog } from "./Dialog";
+import { Button } from "./Button";
 
 const styleTime = " text-sm opacity-80";
 
@@ -115,7 +116,7 @@ function Note({
         <span className={styleTime}>
           {formatDate(new Date(note.createdAt))}
         </span>
-        <button onClick={deleteNote} disabled={isProcessing}>Delete</button>
+        <Button onClick={deleteNote} disabled={isProcessing}>Delete</Button>
       </div>
       <div className="border-t my-1"></div>
       {note.messages.map((m) => (
@@ -132,10 +133,10 @@ function Note({
         </div>
       ))}
       <div className="flex gap-2">
-        <textarea className="flex-1 border rounded p-2" value={text} onChange={(e) => setText(e.target.value)} />
+        <textarea className="flex-1 border rounded-sm p-2" value={text} onChange={(e) => setText(e.target.value)} />
         <div className="flex flex-col gap-2">
-          <button onClick={addComment} disabled={isProcessing}>Post</button>
-          <button onClick={requestCompanionsComment} disabled={isProcessing}>Request</button>
+          <Button onClick={addComment} disabled={isProcessing}>Post</Button>
+          <Button onClick={requestCompanionsComment} disabled={isProcessing}>Request</Button>
         </div>
       </div>
     </div>

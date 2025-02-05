@@ -4,6 +4,7 @@ import { client } from '../urql'
 import { ChatList } from './ChatList'
 import { Notes } from './Notes'
 import { PostButton } from './PostButton'
+import { Button } from './Button'
 
 function App() {
   const [state, setState] = useState(parseHash(location.hash));
@@ -21,15 +22,15 @@ function App() {
 
   return (
     <Provider value={client}>
-      <div className="w-screen h-screen flex flex-col items-stretch bg-gray-200">
+      <div className="w-dvw h-dvh flex flex-col items-stretch bg-gray-200 text-gray-800">
         <header className="p-4 flex">
           <h1 className="mr-auto text-4xl font-bold">anlg</h1>
           <PostButton />
         </header>
         <div className="p-4 flex flex-col gap-4">
           <div className="flex gap-2">
-            <button onClick={() => setMode('notes')}>notes</button>
-            <button onClick={() => setMode('chats')}>chats</button>
+            <Button onClick={() => setMode('notes')} selected={mode === 'notes'}>notes</Button>
+            <Button onClick={() => setMode('chats')} selected={mode === 'chats'}>chats</Button>
           </div>
           <div className="flex-1">
             {mode === 'notes' && (

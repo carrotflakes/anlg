@@ -26,7 +26,7 @@ rustls = { version = "0.23", default-features = false, features = [
 rustls-pemfile = "2.2"
 log = "0.4"
 env_logger = "0.11"
-gptcl = { git = "https://github.com/carrotflakes/gptcl.git", rev = "46f4cf081188d8caf00ab03bf0c928918e359d0c" }
-gptcl-hyper = { git = "https://github.com/carrotflakes/gptcl.git", rev = "46f4cf081188d8caf00ab03bf0c928918e359d0c" }
-firestore = "0.43"
+gptcl = { git = "https://github.com/carrotflakes/gptcl.git", rev = "edabf2d4dbe47553d315a29859e5c2ddfd42158b" }
+gptcl-hyper = { git = "https://github.com/carrotflakes/gptcl.git", rev = "edabf2d4dbe47553d315a29859e5c2ddfd42158b" }
+firestore = "0.44"
 futures = "0.3"

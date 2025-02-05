@@ -1,0 +1,16 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "api"
+		},
+		{
+			"path": "front"
+		}
+	],
+	"settings": {
+		"typescript.tsdk": "front/node_modules/typescript/lib"
+	}
+}
