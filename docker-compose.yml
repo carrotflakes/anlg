@@ -27,13 +27,13 @@ services:
       - "8081:8080"
     volumes:
       - ./firestore/gcloud:/root/.config/gcloud
-  front:
-    build:
-      context: ./front
-      dockerfile: Dockerfile
-    ports:
-      - "3000:5173"
-    environment:
-      - VITE_API_URL=http://localhost:8000
-    volumes:
-      - ./front:/app
+  # front:
+  #   build:
+  #     context: ./front
+  #     dockerfile: Dockerfile
+  #   ports:
+  #     - "3000:5173"
+  #   environment:
+  #     - VITE_API_URL=http://localhost:8000
+  #   volumes:
+  #     - ./front:/app
